@@ -22,7 +22,19 @@
 
 #define GETOPT_ARGS "dhcf:a:"
 
-int runDaemon(){
+int runDaemonMode(){
+	int rc = EXIT_SUCCESS;
+
+	return rc;
+}
+
+int runClientMode(char* _serverAddr, char* _filePath){
+	int rc = EXIT_SUCCESS;
+
+	return rc;
+}
+
+int runServerMode(){
 	int rc = EXIT_SUCCESS;
 
 	return rc;
@@ -48,11 +60,16 @@ int main(int argc, char** argv){
 		switch(option){
 		case 'h':
 			printf("Options and arguments:\n"
-					"-h\t : Shows this help-message.\n"
-					"-d\t : Run in daemon mode. Loads settings from config and starts listen network port for incoming files.\n"
+					"-h\t : Shows this help-message and exit.\n"
+					"-d\t : Run in daemon mode. Loads settings from config and starts listen network port as server for incoming files.\n"
 					"-c\t : Run in client mode. Sends file -f (path to file) to -a (address) server on default port: %d.\n"
 					"-f arg\t : Works only with -c options. Sets the file path on local disk.\n"
 					"-a arg\t : Works only with -c options. Sets the server address (IPv4)\n\n", DEFAULT_SERVER_PORT);
+			if(sendFilePath != NULL){
+				free(sendFilePath);
+			}
+			if(serverAddr != NULL)
+				free(serverAddr);
 			return EXIT_SUCCESS;
 			break;
 		case 'd':
@@ -68,42 +85,116 @@ int main(int argc, char** argv){
 				printf("Error - selected multiple modes. Select only one mode.\n");
 				return EXIT_FAILURE;
 			}
+
+			appMode = MODE_CLIENT;
 			break;
 		case 'f':
+			sendFilePath = (char*) malloc(strlen(optarg) * sizeof(char));
+			strncpy(sendFilePath, optarg, strlen(optarg) * sizeof(char));
 			break;
 		case 'a':
+			serverAddr = (char*) malloc(strlen(optarg) * sizeof(char));
+			strncpy(serverAddr, optarg, strlen(optarg) * sizeof(char));
 			break;
 		}
 		option = getopt(argc, argv, GETOPT_ARGS);
 	}
 
+	if(appMode == MODE_NONE){
+		printf("Forgot select program mode! Look -h help message.\n");
+
+		if(sendFilePath != NULL)
+			free(sendFilePath);
+		if(serverAddr != NULL)
+			free(serverAddr);
+
+		return EXIT_FAILURE;
+	}
+
 	if(appMode == MODE_CLIENT && (sendFilePath == NULL || serverAddr == NULL)){
-		printf("Was selected client mode but forgot set -f or -a arguments! Look -h help message.\n");
+		printf("Was selected client mode but forgot set -f or -a argument! Look -h help message.\n");
 		return EXIT_FAILURE;
 	}
 
-	daemon_pid = fork();
-	if(daemon_pid == -1){
-		printf("Can't start daemon: %s\n", strerror(errno));
-		return EXIT_FAILURE;
+
+	if(appMode == MODE_DAEMON){
+#ifdef DEBUG
+		printf("Run Daemon mode.\n");
+#endif
+		daemon_pid = fork();
+		if(daemon_pid == -1){
+			printf("Can't start daemon: %s\n", strerror(errno));
+
+			if(sendFilePath != NULL)
+				free(sendFilePath);
+			if(serverAddr != NULL)
+				free(serverAddr);
+
+			return EXIT_FAILURE;
+		}
+
+		if(daemon_pid == 0){
+			printf("Daemon started successful.\n");
+			umask(0);
+			setsid();
+			chdir("/");
+
+			close(STDIN_FILENO);
+			close(STDOUT_FILENO);
+			close(STDERR_FILENO);
+
+			rc |= runDaemonMode();
+
+			return rc;
+		}
+		else{
+#ifdef DEBUG
+			printf("Close current process.\n");
+#endif
+			// free memory
+			if(sendFilePath != NULL){
+				free(sendFilePath);
+			}
+			if(serverAddr != NULL){
+				free(serverAddr);
+			}
+
+			return EXIT_SUCCESS;
+		}
 	}
+	if(appMode == MODE_CLIENT){
+#ifdef DEBUG
+		printf("Run Client mode.\n");
+#endif
 
-	if(daemon_pid == 0){
-		umask(0);
-		setsid();
-		chdir("/");
+		rc |= runClientMode(serverAddr, sendFilePath);
 
-		close(STDIN_FILENO);
-		close(STDOUT_FILENO);
-		close(STDERR_FILENO);
-
-		rc |= runDaemon();
+		// free memory
+		if(sendFilePath != NULL){
+			free(sendFilePath);
+		}
+		if(serverAddr != NULL){
+			free(serverAddr);
+		}
 
 		return rc;
 	}
-	else{
-		printf("Daemon started successful.\n");
-		return EXIT_SUCCESS;
+	if(appMode == MODE_SERVER){
+#ifdef DEBUG
+		printf("Run Server mode.\n");
+#endif
+
+		rc |= runServerMode();
+
+		// free memory
+		if(sendFilePath != NULL){
+			free(sendFilePath);
+		}
+		if(serverAddr != NULL){
+			free(serverAddr);
+		}
+
+		return rc;
 	}
 }
 
