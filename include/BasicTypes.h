@@ -8,6 +8,9 @@
 #ifndef INCLUDE_BASICTYPES_H_
 #define INCLUDE_BASICTYPES_H_
 
+#include "../BuildConfig.h"
+#include "../include/BasicConstants.h"
+
 typedef enum{
 	FALSE = 0,
 	TRUE
@@ -21,6 +24,15 @@ typedef enum{
 	MODE_CLIENT,
 } __mode_type;
 typedef __mode_type mode_type_t;
+
+typedef long long int file_size_t;
+
+typedef struct{
+	file_size_t fileSize;
+	char fileName[MAX_FILENAME_LEN];
+} __file_info_msg;
+typedef __file_info_msg file_info_msg_t;
+
 
 
 #endif /* INCLUDE_BASICTYPES_H_ */

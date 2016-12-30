@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <sys/file.h>
 
+#include "../BuildConfig.h"
 #include "../include/BasicTypes.h"
 #include "../include/BasicConstants.h"
 
@@ -115,7 +116,6 @@ int main(int argc, char** argv){
 		printf("Was selected client mode but forgot set -f or -a argument! Look -h help message.\n");
 		return EXIT_FAILURE;
 	}
-
 
 	if(appMode == MODE_DAEMON){
 #ifdef DEBUG
