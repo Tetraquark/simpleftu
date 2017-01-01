@@ -18,6 +18,7 @@
 
 #include "../BuildConfig.h"
 #include "../include/BasicConstants.h"
+#include "../include/Serializer.h"
 
 typedef enum{
 	LISTEN,

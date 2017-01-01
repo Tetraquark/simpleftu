@@ -65,7 +65,7 @@ void* startListenTCPSocket(void* threadData){
 			int inputClientFd = 0;
 
 			if ((inputClientFd = accept(serverInfo->socketFd, (struct sockaddr *)&tcpInputClient_addr, &(sizeof(tcpInputClient_addr)))) < 0){
-				return -1;
+				return EXIT_FAILURE;
 			}
 
 
@@ -94,7 +94,7 @@ void* startPeerThread(void* threadData){
 	memset(&inputPassBuff, 0, sizeof(inputPassBuff));
 	if((inputMsgSize = recvfrom(inputConnectFd, &inputPassBuff, MAX_PASS_LEN * sizeof(char), 0, NULL, 0)) < 0){
 		// Receiving error
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	// check input password
@@ -108,15 +108,41 @@ void* startPeerThread(void* threadData){
 
 	// get file info struct
 	file_info_msg_t inputFileInfo;
-	if((inputMsgSize = recvfrom(inputConnectFd, &inputFileInfo, sizeof(inputFileInfo), 0, NULL, 0)) < 0){
+	size_t inputMsgBuffSize = sizeof(char) * MAX_FILESIZE_CHAR_NUM + sizeof(char) * MAX_FILENAME_LEN;
+	char* fileInfoMsgBuff = (char*) malloc(inputMsgBuffSize);
+	memset(fileInfoMsgBuff, 0, inputMsgBuffSize);
+
+	if((inputMsgSize = recvfrom(inputConnectFd, fileInfoMsgBuff, inputMsgBuffSize, 0, NULL, 0)) < 0){
 		// Receiving error
-		return -1;
+		return EXIT_FAILURE;
+	}
+	if(deserialize_FileInfoMsg(&inputFileInfo, fileInfoMsgBuff, ';')){
+		// Deserialize error
+		return EXIT_FAILURE;
+	}
+
+	size_t recvFuleFullPathSize = strlen(servDownloadFolder) * sizeof(char) + strlen(inputFileInfo.fileName) * sizeof(char);
+	char* recvFileFullPath = (char*) malloc(recvFuleFullPathSize);
+	memset(recvFileFullPath, 0, recvFuleFullPathSize);
+	strncpy(recvFileFullPath, servDownloadFolder, strlen(servDownloadFolder));
+	strncpy(&recvFileFullPath[strlen(servDownloadFolder)], inputFileInfo.fileName, strlen(inputFileInfo.fileName));
+
+	FILE* recvFile = fopen(recvFileFullPath, "wb");
+	if(recvFile == NULL){
+		// file opening error
+		return EXIT_FAILURE;
 	}
 
 	// getting file
+	file_size_t remainData = inputFileInfo.fileSize;
 
 
 	// close pthread
+	close(inputConnectFd);
+	fclose(recvFile);
+	free(fileInfoMsgBuff);
+	free(recvFileFullPath);
+	return EXIT_SUCCESS;
 }
 
 
@@ -137,12 +163,12 @@ bool_t checkPassword(const char* servPassStr, const char* inputPassStr){
 
 /**
  * Create socket listener for _socket_desc descriptor and bind into _port.
- * @return 0 success; -1 error
+ * @return 0 success; 1 error
  */
 int createServTCPSocket(struct sockaddr_in* _tcpsocket_addr, int* _socket_desc, int _port){
 
 	if((*_socket_desc = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
-		return -1;
+		return EXIT_FAILURE;
 
     memset(_tcpsocket_addr, 0, sizeof(*_tcpsocket_addr));
     (*_tcpsocket_addr).sin_family      = AF_INET;
@@ -150,8 +176,8 @@ int createServTCPSocket(struct sockaddr_in* _tcpsocket_addr, int* _socket_desc, 
     (*_tcpsocket_addr).sin_port        = htons(_port);
 
     if( bind(*_socket_desc, _tcpsocket_addr, sizeof(*_tcpsocket_addr)) < 0 )
-    	return -1;
+    	return EXIT_FAILURE;
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
