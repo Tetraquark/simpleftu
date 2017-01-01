@@ -19,8 +19,10 @@
 #ifdef DEBUG
 // 4 Gb - long long int
 #define MAX_FILE_SIZE 4294967296
+#define MAX_FILESIZE_CHAR_NUM 11
 #elif
 #define MAX_FILE_SIZE 4294967296
+#define MAX_FILESIZE_CHAR_NUM 11
 #endif
 
 /*
@@ -29,5 +31,6 @@
  */
 #define MAX_PASS_LEN 8
 #define MAX_FILENAME_LEN 64
+
 
 #endif /* INCLUDE_BASICCONSTANTS_H_ */
