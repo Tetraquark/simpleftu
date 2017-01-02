@@ -49,4 +49,7 @@ void* startListenTCPSocket(void* threadData);
 
 int createServTCPSocket(struct sockaddr_in* _tcpsocket_addr, int* _socket_desc, int _port);
 
+// stopgap measure
+bool_t checkPassword(const char* servPassStr, const char* inputPassStr);
+
 #endif /* INCLUDE_SERVER_H_ */

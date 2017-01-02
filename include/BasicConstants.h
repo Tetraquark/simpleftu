@@ -22,7 +22,7 @@
 // 32 Gb
 #define MAX_FILE_SIZE 34359738368
 #define MAX_FILESIZE_CHAR_NUM 11
-#elif
+#else
 #define MAX_FILE_SIZE 34359738368
 #define MAX_FILESIZE_CHAR_NUM 11
 #endif

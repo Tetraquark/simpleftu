@@ -17,6 +17,6 @@
 
 char* serialize_FileInfoMsg(file_info_msg_t inStruct, const char delimSymbol);
 
-int deserialize_FileInfoMsg(const file_info_msg_t* outStruct, char* msgBuff, const char delimSymbol);
+int deserialize_FileInfoMsg(file_info_msg_t* outStruct, char* msgBuff, const char delimSymbol);
 
 #endif /* INCLUDE_SERIALIZER_H_ */

@@ -45,7 +45,7 @@ char* serialize_FileInfoMsg(file_info_msg_t inStruct, const char delimSymbol){
 	return serializedMsg;
 }
 
-int deserialize_FileInfoMsg(const file_info_msg_t* outStruct, char* msgBuff, const char delimSymbol){
+int deserialize_FileInfoMsg(file_info_msg_t* outStruct, char* msgBuff, const char delimSymbol){
 	if(outStruct == NULL || msgBuff == NULL)
 		return EXIT_FAILURE;
 

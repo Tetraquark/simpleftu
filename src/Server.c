@@ -64,7 +64,7 @@ void* startListenTCPSocket(void* threadData){
 			struct sockaddr_in tcpInputClient_addr;
 			int inputClientFd = 0;
 
-			if ((inputClientFd = accept(serverInfo->socketFd, (struct sockaddr *)&tcpInputClient_addr, &(sizeof(tcpInputClient_addr)))) < 0){
+			if ((inputClientFd = accept(serverInfo->socketFd, &tcpInputClient_addr, (sizeof(tcpInputClient_addr)))) < 0){
 				return EXIT_FAILURE;
 			}
 
@@ -101,7 +101,7 @@ void* startPeerThread(void* threadData){
 	if(checkPassword(servPassword, inputPassBuff) == FALSE){
 		// if wrong password - close connection and close pthread
 		close(inputConnectFd);
-		pthread_exit();
+		return EXIT_FAILURE;
 	}
 
 	inputMsgSize = 0;
@@ -127,11 +127,13 @@ void* startPeerThread(void* threadData){
 	strncpy(recvFileFullPath, servDownloadFolder, strlen(servDownloadFolder));
 	strncpy(&recvFileFullPath[strlen(servDownloadFolder)], inputFileInfo.fileName, strlen(inputFileInfo.fileName));
 
+	/*
 	FILE* recvFile = fopen(recvFileFullPath, "wb");
 	if(recvFile == NULL){
 		// file opening error
 		return EXIT_FAILURE;
 	}
+	*/
 
 	// getting file
 	file_size_t remainData = inputFileInfo.fileSize;
@@ -139,7 +141,7 @@ void* startPeerThread(void* threadData){
 
 	// close pthread
 	close(inputConnectFd);
-	fclose(recvFile);
+	//fclose(recvFile);
 	free(fileInfoMsgBuff);
 	free(recvFileFullPath);
 	return EXIT_SUCCESS;
