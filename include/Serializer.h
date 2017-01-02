@@ -11,8 +11,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "../include/BasicConstants.h"
-#include "../include/BasicTypes.h"
+#include "BasicConstants.h"
+#include "BasicTypes.h"
+#include "Crypto.h"
 
 char* serialize_FileInfoMsg(file_info_msg_t inStruct, const char delimSymbol);
 

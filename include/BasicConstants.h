@@ -8,6 +8,8 @@
 #ifndef INCLUDE_BASICCONSTANTS_H_
 #define INCLUDE_BASICCONSTANTS_H_
 
+#include <limits.h>
+
 #include "../BuildConfig.h"
 
 #define DEFAULT_SERVER_PORT 10888
@@ -17,11 +19,11 @@
  * Maximum sending file size;
  */
 #ifdef DEBUG
-// 4 Gb - long long int
-#define MAX_FILE_SIZE 4294967296
+// 32 Gb
+#define MAX_FILE_SIZE 34359738368
 #define MAX_FILESIZE_CHAR_NUM 11
 #elif
-#define MAX_FILE_SIZE 4294967296
+#define MAX_FILE_SIZE 34359738368
 #define MAX_FILESIZE_CHAR_NUM 11
 #endif
 
@@ -30,7 +32,7 @@
  * Maximum password length in char symbols;
  */
 #define MAX_PASS_LEN 8
-#define MAX_FILENAME_LEN 64
+#define MAX_FILENAME_LEN 128
 
 
 #endif /* INCLUDE_BASICCONSTANTS_H_ */

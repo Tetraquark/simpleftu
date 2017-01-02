@@ -8,22 +8,39 @@
 #include "../include/Serializer.h"
 
 char* serialize_FileInfoMsg(file_info_msg_t inStruct, const char delimSymbol){
-	int token1_len = strlen(inStruct.fileName);
+	int fileNameStr_len = strlen(inStruct.fileName);
 
-	if(token1_len <= 0 || inStruct.fileSize <= 0)
+	if(fileNameStr_len <= 0 || inStruct.fileSize <= 0)
 		return NULL;
 
 	char fileSizeMsgStr[MAX_FILESIZE_CHAR_NUM];
 	memset(fileSizeMsgStr, 0, MAX_FILESIZE_CHAR_NUM);
 	sprintf(fileSizeMsgStr, "%lld", inStruct.fileSize);
-	int token2_len = strlen(fileSizeMsgStr);
+	int fileSizeStr_len = strlen(fileSizeMsgStr);
 
-	size_t buffSize = token1_len * sizeof(char) + token2_len * sizeof(char) + sizeof(char);
+	char fileMd5HashStr[MD5_BLOCK_SIZE * 2];
+	memset(fileMd5HashStr, '\0', MD5_BLOCK_SIZE * 2 * sizeof(char));
+	if(!fromByteArrToHexStr(inStruct.fileHash_md5, MD5_BLOCK_SIZE, fileMd5HashStr)){
+		return NULL;
+	}
+
+	int fileHashMd5Str_len = strlen(fileMd5HashStr);
+
+	size_t buffSize = fileNameStr_len * sizeof(char) + fileSizeStr_len * sizeof(char) +
+			fileHashMd5Str_len * sizeof(char) + 2 * sizeof(char);
+
 	char* serializedMsg = (char*) malloc(buffSize);
 
-	strncpy(serializedMsg, inStruct.fileName, token1_len);
-	strncpy(&serializedMsg[token1_len], &delimSymbol, 1);
-	strncpy(&serializedMsg[token1_len + 1], fileSizeMsgStr, token2_len);
+	// paste fileName field
+	memcpy(serializedMsg, inStruct.fileName, fileNameStr_len * sizeof(char));
+	// paste delim symbol
+	memcpy(&serializedMsg[fileNameStr_len], &delimSymbol, sizeof(char));
+	// paste fileSize field
+	memcpy(&serializedMsg[fileNameStr_len + 1], fileSizeMsgStr, fileSizeStr_len * sizeof(char));
+	// paste delim symbol
+	memcpy(&serializedMsg[fileNameStr_len + 1 + fileSizeStr_len], &delimSymbol, sizeof(char));
+	// paste fileHash_md5 field
+	memcpy(&serializedMsg[fileNameStr_len + 1 + fileSizeStr_len + 1], fileMd5HashStr, fileHashMd5Str_len * sizeof(char));
 
 	return serializedMsg;
 }
@@ -43,6 +60,15 @@ int deserialize_FileInfoMsg(const file_info_msg_t* outStruct, char* msgBuff, con
 	if(pch == NULL)
 		return EXIT_FAILURE;
 	outStruct->fileSize = atoll(pch);
+
+	// get fileHash_md5 field
+	pch = strtok(msgBuff, &delimSymbol);
+	if(pch == NULL)
+		return EXIT_FAILURE;
+	BYTE fileHash_md5_arr[MD5_BLOCK_SIZE];
+	memset(fileHash_md5_arr, 0, MD5_BLOCK_SIZE * sizeof(BYTE));
+	fromHexStrToByteArr(pch, MD5_BLOCK_SIZE * 2, fileHash_md5_arr);
+	memcpy(outStruct->fileHash_md5, fileHash_md5_arr, MD5_BLOCK_SIZE * sizeof(BYTE));
 
 	return EXIT_SUCCESS;
 }
