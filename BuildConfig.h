@@ -14,4 +14,11 @@
  */
 #define DEBUG
 
+#ifdef DEBUG
+#define DEBUG_SERVER_IP "127.0.0.1"
+#define DEBUG_SERVER_PORT 10888
+#define DEBUG_SERVER_FILES_STORAGE_PATH "sftu_storage/"
+#define DEBUG_PASSWORD "1234qwer"
+#endif
+
 #endif /* BUILDCONFIG_H_ */

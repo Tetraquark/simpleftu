@@ -2,7 +2,8 @@
  * Server.h
  *
  *  Created on: 8 окт. 2016 г.
- *      Author: tetraquark
+ *  	Project repo URL: https://github.com/Tetraquark/simpleftu
+ *      Author: tetraquark | tetraquark.ru
  */
 
 #ifndef INCLUDE_SERVER_H_
@@ -16,9 +17,13 @@
 #include <pthread.h>
 #include <string.h>
 
+#include <fcntl.h>
+
 #include "../BuildConfig.h"
 #include "BasicConstants.h"
+#include "Common.h"
 #include "Serializer.h"
+#include "Crypto.h"
 
 typedef enum{
 	LISTEN,
@@ -33,19 +38,22 @@ typedef enum{
 typedef struct{
 	char password[MAX_PASS_LEN];
 	char* saveFilesFolder;
+	int port;
+	serverMode_t mode;
 } serverConfig_t;
 
 typedef struct{
 	int socketFd;
 	int inputCommsPipeFd;
-	serverMode_t mode;
 	serverConfig_t conf;
 } serverSysInfo_t;
 
 
-int startTCPServer();
+int startServTCPListener(serverConfig_t _serverConf);
 
 void* startListenTCPSocket(void* threadData);
+
+void* startPeerThread(void* threadData);
 
 int createServTCPSocket(struct sockaddr_in* _tcpsocket_addr, int* _socket_desc, int _port);
 

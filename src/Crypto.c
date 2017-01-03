@@ -2,7 +2,8 @@
  * Crypto.c
  *
  *  Created on: 2 янв. 2017 г.
- *      Author: tetraquark
+ *  	Project repo URL: https://github.com/Tetraquark/simpleftu
+ *      Author: tetraquark | tetraquark.ru
  */
 
 #include "../include/Crypto.h"
@@ -22,19 +23,19 @@ int fromHexStrToByteArr(const char* hexStr, int hexStrSize, BYTE* out_byteArr){
 	return EXIT_SUCCESS;
 }
 
-int fromByteArrToHexStr(const BYTE* byteArr, int byteArrSize, char* out_strArr){
+int fromByteArrToHexStr(const BYTE* byteArr, int byteArrSize, char** out_strArr){
 	if(out_strArr == NULL || out_strArr == NULL || byteArrSize % 2 != 0)
 		return EXIT_FAILURE;
 
-	memset(out_strArr, '\0', byteArrSize * 2 * sizeof(char));
+	memset(*out_strArr, '\0', byteArrSize * 2 * sizeof(char));
 
 	for(int i = 0; i < byteArrSize; i++){
-		sprintf(out_strArr + i * 2, "%02x", byteArr[i]);
+		sprintf(*out_strArr + i * 2, "%02x", byteArr[i]);
 	}
 
 	return EXIT_SUCCESS;
 }
 
-int md5HashCmp(const BYTE* hash1, const BYTE hash2){
+int cmpHash_md5(const BYTE hash1[MD5_BLOCK_SIZE], const BYTE hash2[MD5_BLOCK_SIZE]){
 	return memcmp(hash1, hash2, MD5_BLOCK_SIZE * sizeof(BYTE));
 }
