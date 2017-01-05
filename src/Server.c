@@ -81,7 +81,7 @@ void* startListenTCPSocket(void* threadData){
 			if ((inputClientFd = accept(serverInfo->socketFd, (struct sockaddr *)&tcpInputClient_addr, &addrLen)) < 0){
 				logMsg(__func__, __LINE__, ERROR, "Error in accepting input peer. RC: %d", inputClientFd);
 				close(serverInfo->socketFd);
-				pthread_exit(EXIT_FAILURE);
+				pthread_exit((void*) EXIT_FAILURE);
 			}
 
 			// TODO: Грязный лайфхак! Надо переделать
@@ -89,10 +89,12 @@ void* startListenTCPSocket(void* threadData){
 			peerInfo.conf = serverInfo->conf;
 			peerInfo.socketFd = inputClientFd;
 			if( pthread_create(&(connectedPeersArr[connectedPeersNum]), NULL, startPeerThread, (void*) &peerInfo) ){
-				logMsg(__func__, __LINE__, ERROR, "Error in creating peer pthread.");
 				// pthread creating error
-				// TODO: free mem and close descriptors
-				pthread_exit(EXIT_FAILURE);
+				logMsg(__func__, __LINE__, ERROR, "Error in creating peer pthread.");
+
+				// close accepted socket
+				close(serverInfo->socketFd);
+				pthread_exit((void*) EXIT_FAILURE);
 			}
 			else{
 				// if pthread creating was successful
@@ -101,6 +103,8 @@ void* startListenTCPSocket(void* threadData){
 		}
 	}
 
+
+	pthread_exit((void*) EXIT_SUCCESS);
 }
 
 /**
