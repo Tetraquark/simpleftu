@@ -20,6 +20,7 @@
 #include <fcntl.h>
 
 #include "../BuildConfig.h"
+#include "BasicTypes.h"
 #include "BasicConstants.h"
 #include "Common.h"
 #include "Serializer.h"

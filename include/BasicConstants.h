@@ -13,6 +13,8 @@
 
 #include "../BuildConfig.h"
 
+#define OUT_ARG
+
 #define MAX_LOG_MSG_LEN 1024
 
 #ifdef DEBUG

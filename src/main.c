@@ -25,7 +25,7 @@
 #include "../include/Server.h"
 #include "../include/Client.h"
 
-#define GETOPT_ARGS "dshcf:a:"
+#define GETOPT_ARGS "dshpf:a:"
 
 int runDaemonMode(){
 	int rc = EXIT_SUCCESS;
@@ -76,11 +76,12 @@ int main(int argc, char** argv){
 		case 'h':
 			printf("Options and arguments:\n"
 					"-h\t : Shows this help-message and exit.\n"
-					"-s\t : Run in server mode. \n"
 					"-d\t : Run in daemon mode. Loads settings from config and starts listen network port as server for incoming files.\n"
-					"-c\t : Run in client mode. Sends file -f (path to file) to -a (address) server on default port: %d.\n"
-					"-f arg\t : Works only with -c mode. Sets the file path on local disk.\n"
-					"-a arg\t : Works only with -c mode. Sets the server address (IPv4)\n\n", DEFAULT_SERVER_PORT);
+					"-s\t : Run in server mode. \n"
+					"-c\t : Works only with -s mode. Sets config file path. \n"
+					"-p\t : Run in client (peer) mode. Sends file -f (path to file) to -a (address) server on default port: %d.\n"
+					"-f arg\t : Works only with -p mode. Sets the file path on local disk.\n"
+					"-a arg\t : Works only with -p mode. Sets the server address (IPv4)\n\n", DEFAULT_SERVER_PORT);
 			if(sendFilePath != NULL){
 				free(sendFilePath);
 			}
@@ -112,7 +113,7 @@ int main(int argc, char** argv){
 
 			appMode = MODE_DAEMON;
 			break;
-		case 'c':
+		case 'p':
 			if(appMode != MODE_NONE){
 				printf("Error - selected multiple modes. Select only one mode.\n");
 				return EXIT_FAILURE;

@@ -8,7 +8,7 @@
 
 #include "../include/Serializer.h"
 
-ssize_t serialize_FileInfoMsg(file_info_msg_t inStruct, const char delimSymbol, char** out_fileInfoMsg){
+ssize_t serialize_FileInfoMsg(file_info_msg_t inStruct, const char delimSymbol, OUT_ARG char** out_fileInfoMsg){
 	int fileNameStr_len = strlen(inStruct.fileName);
 
 	if(fileNameStr_len <= 0 || inStruct.fileSize <= 0)
@@ -51,7 +51,7 @@ ssize_t serialize_FileInfoMsg(file_info_msg_t inStruct, const char delimSymbol, 
 	return buffSize;
 }
 
-int deserialize_FileInfoMsg(file_info_msg_t* outStruct, char* msgBuff, const char delimSymbol){
+int deserialize_FileInfoMsg(OUT_ARG file_info_msg_t* outStruct, char* msgBuff, const char delimSymbol){
 	if(outStruct == NULL || msgBuff == NULL)
 		return EXIT_FAILURE;
 
@@ -77,6 +77,22 @@ int deserialize_FileInfoMsg(file_info_msg_t* outStruct, char* msgBuff, const cha
 	fromHexStrToByteArr(pch, MD5_BLOCK_SIZE * 2, fileHash_md5_arr);
 	memcpy(outStruct->fileHash_md5, fileHash_md5_arr, MD5_BLOCK_SIZE * sizeof(BYTE));
 	*/
+
+	return EXIT_SUCCESS;
+}
+
+int parse_ipaddrStrToParts(char* addr_str, OUT_ARG char** ip_str, OUT_ARG int* port){
+	char delimSymbol = ':';
+
+    char* pch = strtok(addr_str, &delimSymbol);
+    if(pch == NULL)
+    	return EXIT_FAILURE;
+    strncpy(*ip_str, pch, strlen(pch) * sizeof(char));
+
+    pch = strtok(NULL, &delimSymbol);
+    if(pch == NULL)
+    	return EXIT_FAILURE;
+    (*port) = atoi(pch);
 
 	return EXIT_SUCCESS;
 }
