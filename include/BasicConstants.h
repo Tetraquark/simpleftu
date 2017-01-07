@@ -13,6 +13,9 @@
 
 #include "../BuildConfig.h"
 
+/**
+ *
+ */
 #define OUT_ARG
 
 #define MAX_LOG_MSG_LEN 1024
@@ -40,10 +43,13 @@
  * MAX_PASS_LEN
  * Maximum password length in char symbols;
  */
-#define MAX_PASS_LEN 8
+#define MAX_PASS_LEN 8 + 1
 #define MAX_FILENAME_LEN 128
 #define MAX_FULL_FILE_PATH_LEN MAX_FILENAME_LEN + 128
 
 #define SENDING_FILE_PACKET_SIZE 1024
+
+#define IPV4_ADDR_STR_LEN 16
+#define IPADDR_STR_LEN IPV4_ADDR_STR_LEN
 
 #endif /* INCLUDE_BASICCONSTANTS_H_ */

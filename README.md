@@ -1,10 +1,15 @@
-# Simple File Transfer Protocol
+# Simple File Transfer Utility
 
 ## Project status
 
 At now work only on Linux systems.
 
 Build as **DEBUG** mode (look *BuildConfig.h*).
+
+## Dependency list
+
+* pthread
+* libconfig
 
 ## How to run program
 

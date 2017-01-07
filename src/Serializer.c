@@ -9,46 +9,39 @@
 #include "../include/Serializer.h"
 
 ssize_t serialize_FileInfoMsg(file_info_msg_t inStruct, const char delimSymbol, OUT_ARG char** out_fileInfoMsg){
-	int fileNameStr_len = strlen(inStruct.fileName);
+	int _fileNameStr_len = strlen(inStruct.fileName);
 
-	if(fileNameStr_len <= 0 || inStruct.fileSize <= 0)
+	if(_fileNameStr_len <= 0 || inStruct.fileSize <= 0)
 		return -1;
 
-	char fileSizeMsgStr[MAX_FILESIZE_CHAR_NUM];
-	memset(fileSizeMsgStr, 0, MAX_FILESIZE_CHAR_NUM);
-	sprintf(fileSizeMsgStr, "%lld", inStruct.fileSize);
-	int fileSizeStr_len = strlen(fileSizeMsgStr);
+	char _fileSizeMsgStr[MAX_FILESIZE_CHAR_NUM];
+	memset(_fileSizeMsgStr, 0, MAX_FILESIZE_CHAR_NUM);
+#ifdef __linux__
+	sprintf(_fileSizeMsgStr, "%lld", inStruct.fileSize);
+#endif
+	int _fileSizeStr_len = strlen(_fileSizeMsgStr);
 
-	/*
-	char fileMd5HashStr[MD5_BLOCK_SIZE * 2];
-	memset(fileMd5HashStr, '\0', MD5_BLOCK_SIZE * 2 * sizeof(char));
-	if(!fromByteArrToHexStr(inStruct.fileHash_md5, MD5_BLOCK_SIZE, fileMd5HashStr)){
-		return NULL;
-	}
-	int fileHashMd5Str_len = strlen(fileMd5HashStr);
-	*/
-
-	ssize_t buffSize = fileNameStr_len * sizeof(char) +
-			fileSizeStr_len * sizeof(char) +
+	ssize_t _buffSize = _fileNameStr_len * sizeof(char) +
+			_fileSizeStr_len * sizeof(char) +
 			//fileHashMd5Str_len * sizeof(char) +
 			2 * sizeof(char);
 
-	char* serializedMsg = (char*) malloc(buffSize);
+	char* _serializedMsg = (char*) malloc(_buffSize);
 
 	// paste fileName field
-	strncpy(serializedMsg, inStruct.fileName, fileNameStr_len * sizeof(char));
+	strncpy(_serializedMsg, inStruct.fileName, _fileNameStr_len * sizeof(char));
 	// paste delim symbol
-	strncpy(&serializedMsg[fileNameStr_len], &delimSymbol, sizeof(char));
+	strncpy(&_serializedMsg[_fileNameStr_len], &delimSymbol, sizeof(char));
 	// paste fileSize field
-	strncpy(&serializedMsg[fileNameStr_len + 1], fileSizeMsgStr, fileSizeStr_len * sizeof(char));
+	strncpy(&_serializedMsg[_fileNameStr_len + 1], _fileSizeMsgStr, _fileSizeStr_len * sizeof(char));
 	// paste delim symbol
-	//memcpy(&serializedMsg[fileNameStr_len + 1 + fileSizeStr_len], &delimSymbol, sizeof(char));
+	//memcpy(&_serializedMsg[_fileNameStr_len + 1 + _fileSizeStr_len], &delimSymbol, sizeof(char));
 	// paste fileHash_md5 field
-	//memcpy(&serializedMsg[fileNameStr_len + 1 + fileSizeStr_len + 1], fileMd5HashStr, fileHashMd5Str_len * sizeof(char));
-	strncpy(&serializedMsg[fileNameStr_len + 1 + fileSizeStr_len + 1], &delimSymbol, sizeof(char));
+	//memcpy(&_serializedMsg[_fileNameStr_len + 1 + _fileSizeStr_len + 1], fileMd5HashStr, fileHashMd5Str_len * sizeof(char));
+	strncpy(&_serializedMsg[_fileNameStr_len + 1 + _fileSizeStr_len + 1], &delimSymbol, sizeof(char));
 
-	*out_fileInfoMsg = serializedMsg;
-	return buffSize;
+	*out_fileInfoMsg = _serializedMsg;
+	return _buffSize;
 }
 
 int deserialize_FileInfoMsg(OUT_ARG file_info_msg_t* outStruct, char* msgBuff, const char delimSymbol){
@@ -56,25 +49,25 @@ int deserialize_FileInfoMsg(OUT_ARG file_info_msg_t* outStruct, char* msgBuff, c
 		return EXIT_FAILURE;
 
 	// get fileName field
-	char* pch = strtok(msgBuff, &delimSymbol);
-	if(pch == NULL)
+	char* _pch = strtok(msgBuff, &delimSymbol);
+	if(_pch == NULL)
 		return EXIT_FAILURE;
-	strncpy(outStruct->fileName, pch, strlen(pch) * sizeof(char));
+	strncpy(outStruct->fileName, _pch, strlen(_pch) * sizeof(char));
 
 	// get fileSize field
-	pch = strtok(NULL, &delimSymbol);
-	if(pch == NULL)
+	_pch = strtok(NULL, &delimSymbol);
+	if(_pch == NULL)
 		return EXIT_FAILURE;
-	outStruct->fileSize = atoll(pch);
+	outStruct->fileSize = atoll(_pch);
 
 	// get fileHash_md5 field
 	/*
-	pch = strtok(msgBuff, &delimSymbol);
-	if(pch == NULL)
+	_pch = strtok(msgBuff, &delimSymbol);
+	if(_pch == NULL)
 		return EXIT_FAILURE;
 	BYTE fileHash_md5_arr[MD5_BLOCK_SIZE];
 	memset(fileHash_md5_arr, 0, MD5_BLOCK_SIZE * sizeof(BYTE));
-	fromHexStrToByteArr(pch, MD5_BLOCK_SIZE * 2, fileHash_md5_arr);
+	fromHexStrToByteArr(_pch, MD5_BLOCK_SIZE * 2, fileHash_md5_arr);
 	memcpy(outStruct->fileHash_md5, fileHash_md5_arr, MD5_BLOCK_SIZE * sizeof(BYTE));
 	*/
 
@@ -84,15 +77,15 @@ int deserialize_FileInfoMsg(OUT_ARG file_info_msg_t* outStruct, char* msgBuff, c
 int parse_ipaddrStrToParts(char* addr_str, OUT_ARG char** ip_str, OUT_ARG int* port){
 	char delimSymbol = ':';
 
-    char* pch = strtok(addr_str, &delimSymbol);
-    if(pch == NULL)
+    char* _pch = strtok(addr_str, &delimSymbol);
+    if(_pch == NULL)
     	return EXIT_FAILURE;
-    strncpy(*ip_str, pch, strlen(pch) * sizeof(char));
+    strncpy(*ip_str, _pch, strlen(_pch) * sizeof(char));
 
-    pch = strtok(NULL, &delimSymbol);
-    if(pch == NULL)
+    _pch = strtok(NULL, &delimSymbol);
+    if(_pch == NULL)
     	return EXIT_FAILURE;
-    (*port) = atoi(pch);
+    (*port) = atoi(_pch);
 
 	return EXIT_SUCCESS;
 }

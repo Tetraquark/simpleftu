@@ -24,6 +24,7 @@
 #include "../include/Common.h"
 #include "../include/Server.h"
 #include "../include/Client.h"
+#include "../include/Config.h"
 
 #define GETOPT_ARGS "dshpf:a:"
 
@@ -61,6 +62,7 @@ int main(int argc, char** argv){
 	mode_type_t appMode = MODE_NONE;
 	char* sendFilePath = NULL;
 	char* serverAddr = NULL;
+	int serverPort = 0;
 
 	serverConfig_t servConfStrct;
 
@@ -98,9 +100,8 @@ int main(int argc, char** argv){
 #ifdef DEBUG
 			strncpy(servConfStrct.password, DEBUG_PASSWORD, MAX_PASS_LEN);
 			//servConfStrct.password = DEBUG_PASSWORD;
-			servConfStrct.saveFilesFolder = DEBUG_SERVER_FILES_STORAGE_PATH;
+			servConfStrct.storageFolderPath = DEBUG_SERVER_FILES_STORAGE_PATH;
 			servConfStrct.port = DEBUG_SERVER_PORT;
-			servConfStrct.mode = MULTI_CLIENT;
 #endif
 
 			appMode = MODE_SERVER;
@@ -122,12 +123,22 @@ int main(int argc, char** argv){
 			appMode = MODE_CLIENT;
 			break;
 		case 'f':
-			sendFilePath = (char*) malloc(strlen(optarg) * sizeof(char));
+			sendFilePath = (char*) malloc(strlen(optarg) + 1 * sizeof(char));
+			memset(sendFilePath, '\0', strlen(optarg) + 1 * sizeof(char));
 			strncpy(sendFilePath, optarg, strlen(optarg) * sizeof(char));
 			break;
 		case 'a':
-			serverAddr = (char*) malloc(strlen(optarg) * sizeof(char));
-			strncpy(serverAddr, optarg, strlen(optarg) * sizeof(char));
+			serverAddr = (char*) malloc(IPADDR_STR_LEN * sizeof(char));
+			memset(serverAddr, '\0', IPADDR_STR_LEN * sizeof(char));
+			//strncpy(serverAddr, optarg, strlen(optarg) * sizeof(char));
+			if(parse_ipaddrStrToParts(optarg, &serverAddr, &serverPort)){
+				logMsg(__func__, __LINE__, ERROR, "Parsing server address error. Correct input string format: \"IP:PORT\"(127.0.0.1:10888).");
+
+				if(sendFilePath != NULL)
+					free(sendFilePath);
+				free(serverAddr);
+				return EXIT_FAILURE;
+			}
 			break;
 		}
 		option = getopt(argc, argv, GETOPT_ARGS);
@@ -195,7 +206,7 @@ int main(int argc, char** argv){
 		}
 	}
 	else if(appMode == MODE_CLIENT){
-		logMsg(__func__, __LINE__, INFO, "Run Client mode. Start runClientMode().");
+		logMsg(__func__, __LINE__, INFO, "Run Client mode. Connect to: %s:%d; Send file: %s", serverAddr, serverPort, sendFilePath);
 #ifdef DEBUG
 		rc |= runClientMode(DEBUG_SERVER_IP, DEFAULT_SERVER_PORT, sendFilePath);
 #else

@@ -120,12 +120,12 @@ void* startPeerThread(void* threadData){
 	logMsg(__func__, __LINE__, INFO, "New connected peer. Start peer pthread.");
 	serverSysInfo_t* connectInfo = (serverSysInfo_t*) threadData;
 	char* servPassword = connectInfo->conf.password;		// server password
-	char* servDownloadFolder = connectInfo->conf.saveFilesFolder;
+	char* servDownloadFolder = connectInfo->conf.storageFolderPath;
 	int inputConnectFd = connectInfo->socketFd;				// input connection FD
 	ssize_t inputMsgSize = 0;
 
 	// get input password
-	char inputPassBuff[MAX_PASS_LEN];
+	char* inputPassBuff = (char*) malloc(MAX_PASS_LEN * sizeof(char));
 	memset(inputPassBuff, 0, MAX_PASS_LEN * sizeof(char));
 	if((inputMsgSize = recvfrom(inputConnectFd, inputPassBuff, MAX_PASS_LEN * sizeof(char), 0, NULL, 0)) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Peer password receiving error. Abort peer connection. %s", inputPassBuff);
@@ -142,11 +142,14 @@ void* startPeerThread(void* threadData){
 		// if wrong password - close connection and close pthread
 		// TODO: free mem and close descriptors
 		close(inputConnectFd);
+		free(inputPassBuff);
 		return EXIT_FAILURE;
 	}
 	else{
 		logMsg(__func__, __LINE__, INFO, "Correct input password by peer.");
+		free(inputPassBuff);
 	}
+
 	inputMsgSize = 0;
 
 	// get file info struct
@@ -159,6 +162,7 @@ void* startPeerThread(void* threadData){
 		logMsg(__func__, __LINE__, ERROR, "Peer file info message receiving error. Abort peer connection.");
 		// Receiving error
 		// TODO: free mem and close descriptors
+		free(fileInfoMsgBuff);
 		return EXIT_FAILURE;
 	}
 
@@ -169,8 +173,10 @@ void* startPeerThread(void* threadData){
 		logMsg(__func__, __LINE__, ERROR, "Deserialize input file info message error. Abort peer connection.");
 		// Deserialize error
 		// TODO: free mem and close descriptors
+		free(fileInfoMsgBuff);
 		return EXIT_FAILURE;
 	}
+	//free(fileInfoMsgBuff);
 
 	// builds full file path
 	size_t recvFuleFullPathSize = strlen(servDownloadFolder) * sizeof(char) + strlen(recvInputFileInfo.fileName) * sizeof(char);

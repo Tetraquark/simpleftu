@@ -17,38 +17,58 @@
 
 typedef int64_t file_size_t;
 
-typedef enum{
+enum __bool{
 	FALSE = 0,
 	TRUE
-} __bool;
-typedef __bool bool_t;
+};
+typedef enum __bool bool_t;
 
-typedef enum{
+enum __log_msg_type{
 	INFO = 0,
 	WARNING,
 	ERROR
-} __log_msg_type;
-typedef __log_msg_type log_msg_type_t;
+};
+typedef enum __log_msg_type log_msg_type_t;
 
-typedef enum{
+enum __netmsg_sending_res{
 	SUCCESSFUL = 0,
 	FAIL
-} __netmsg_sending_res;
-typedef __netmsg_sending_res netmsg_sending_res_t;
+};
+typedef enum __netmsg_sending_res netmsg_sending_res_t;
 
-typedef enum{
+enum __mode_type{
 	MODE_NONE,
 	MODE_DAEMON,
 	MODE_SERVER,
 	MODE_CLIENT,
-} __mode_type;
-typedef __mode_type mode_type_t;
+};
+typedef enum __mode_type mode_type_t;
 
-typedef struct{
+struct __file_info_msg{
 	file_size_t fileSize;					// in bytes
 	char fileName[MAX_FILENAME_LEN];
 	//BYTE fileHash_md5[MD5_BLOCK_SIZE];
-} __file_info_msg;
-typedef __file_info_msg file_info_msg_t;
+};
+typedef struct __file_info_msg file_info_msg_t;
+
+enum __serverCommands{
+	LISTEN,
+	STOP_SERVER
+};
+typedef enum __serverCommands serverCommands_t;
+
+struct __serverConfig{
+	char* password;
+	char* storageFolderPath;
+	int port;
+};
+typedef struct __serverConfig serverConfig_t;
+
+struct __serverSysInfo{
+	int socketFd;
+	int inputCommsPipeFd;
+	serverConfig_t conf;
+};
+typedef struct __serverSysInfo serverSysInfo_t;
 
 #endif /* INCLUDE_BASICTYPES_H_ */

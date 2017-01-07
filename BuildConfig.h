@@ -2,6 +2,7 @@
  * BuildConfig.h
  *
  *  Created on: 30 дек. 2016 г.
+ *  	Project repo URL: https://github.com/Tetraquark/simpleftu
  *      Author: tetraquark | tetraquark.ru
  */
 
