@@ -9,7 +9,7 @@ Build as **DEBUG** mode (look *BuildConfig.h*).
 ## Dependency list
 
 * pthread
-* libconfig
+* libconfig (apt-get install libconfig8-dev or yum install libconfig-devel.x86_64)
 
 ## How to run program
 

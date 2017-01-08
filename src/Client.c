@@ -17,8 +17,9 @@
  * 3) client send file md5 hash
  * 4) client send file
  */
-int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_FULL_FILE_PATH_LEN]){
-	logMsg(__func__, __LINE__, INFO, "Run DEBUG_sendTestFile function for test file transfer.");
+int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_FULL_FILE_PATH_LEN], char* serv_pass){
+	logMsg(__func__, __LINE__, INFO, "Start DEBUG_sendTestFile: serv_ip: %s ; serv_port: %d ; serv_pass: %s ; send_filepath: %s",
+			serv_ip, serv_port, serv_pass, sendingfile_path);
 
 	struct sockaddr_in tcpsocket_addr_strct;
 	int socketDescr = 0;
@@ -54,10 +55,10 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 	}
 
 	// send password
-	char* passw = (char*) malloc(MAX_PASS_LEN + 1 * sizeof(char));
-	memcpy(passw, DEBUG_PASSWORD, MAX_PASS_LEN + 1 * sizeof(char));
-	logMsg(__func__, __LINE__, INFO, "Try to send password: %s", passw);
-	if(send(socketDescr, passw, MAX_PASS_LEN + 1 * sizeof(char), 0) < 0){
+	//char* passw = (char*) malloc(MAX_PASS_LEN + 1 * sizeof(char));
+	//memcpy(passw, DEBUG_PASSWORD, MAX_PASS_LEN + 1 * sizeof(char));
+	logMsg(__func__, __LINE__, INFO, "Try to send password: %s", serv_pass);
+	if(send(socketDescr, serv_pass, MAX_PASS_LEN + 1 * sizeof(char), 0) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error in sending password to server. Abort connection.");
 		// Sending result message error
 		// TODO: free mem and close descriptors
@@ -66,7 +67,7 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 		return EXIT_FAILURE;
 	}
 
-	free(passw);
+	//free(passw);
 
 	// send file info
 	file_info_msg_t fileInfoStruct;

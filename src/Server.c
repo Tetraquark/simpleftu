@@ -84,7 +84,7 @@ void* startListenTCPSocket(void* threadData){
 				pthread_exit((void*) EXIT_FAILURE);
 			}
 
-			logMsg(__func__, __LINE__, ERROR, "Accepted connection from: %s", inet_ntoa(tcpInputClient_addr.sin_addr));
+			logMsg(__func__, __LINE__, INFO, "Accepted connection from: %s", inet_ntoa(tcpInputClient_addr.sin_addr));
 
 			// TODO: Грязный лайфхак! Надо переделать
 			serverSysInfo_t peerInfo;

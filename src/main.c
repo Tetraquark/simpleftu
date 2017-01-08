@@ -32,11 +32,11 @@ int runDaemonMode(){
 	return _rc;
 }
 
-int runClientMode(char* __serverAddr, int _serverPort, char* _filePath){
+int runClientMode(char* __serverAddr, int _serverPort, char* _filePath, char* _serverPass){
 	int _rc = EXIT_SUCCESS;
 
 #ifdef DEBUG
-	_rc = DEBUG_sendTestFile(__serverAddr, _serverPort, _filePath);
+	_rc = DEBUG_sendTestFile(__serverAddr, _serverPort, _filePath, _serverPass);
 	if(_rc)
 		logMsg(__func__, __LINE__, INFO, "Unsuccessful file transfer");
 	else
@@ -61,11 +61,12 @@ void getOpt_helpMsg(){
 			"-c --client\t : Run in client (peer) mode. Sends file --file (path to file) to --saddr (address) server.\n\n"
 
 			"-f --file\t : Works only with client (-c) mode. Sets the path of the sent file.\n"
-			"-a --saddr\t : Works only with client (-c) mode. Sets the server address (IPv4) in format \"IPv4:Port\"(127.0.0.1:10888)\n\n"
+			"-a --saddr\t : Works only with client (-c) mode. Sets the server address (IPv4) in format \"IPv4:Port\"(127.0.0.1:10888)\n"
+			"-p --cpass\t : Works only with client (-c) mode. Sets client password.\n\n"
 
 			"--conf\t\t : Works only with -s and -d modes. Sets config file path. Optional arg. Empty arg means load config from default path.\n"
 			"--port\t\t : Works only with -s and -d modes. Sets server TCP port.\n"
-			"--pass\t\t : Works only with -s and -d modes. Sets server password. Maximum %d symbols.\n"
+			"--spass\t\t : Works only with -s and -d modes. Sets password on server. Maximum %d symbols.\n"
 			"--storage\t : Works only with -s and -d modes. Sets server storage dir path.\n"
 
 			, MAX_PASS_LEN);
@@ -77,6 +78,7 @@ int main(int argc, char** argv){
 	mode_type_t appMode = MODE_NONE;
 	char* _sendFilePath = NULL;
 	char* _serverAddr = NULL;
+	char* _clientPass = NULL;
 	int serverPort = 0;
 
 	bool_t isLoadFromCfg = FALSE;
@@ -90,7 +92,7 @@ int main(int argc, char** argv){
 
 	int option = 0;
 	int option_index = 0;
-	const char* short_options = "hdscf:a:";
+	const char* short_options = "hdscp:f:a:";
 	const struct option long_options[] = {
 		{"help", no_argument, NULL, 'h'},
 
@@ -102,11 +104,12 @@ int main(int argc, char** argv){
 		// Args in Client mode:
 		{"file", required_argument, NULL, 'f'},
 		{"saddr", required_argument, NULL, 'a'},
+		{"saddr", required_argument, NULL, 'p'},
 
 		// Args in Server mode:
 		{"conf", optional_argument, NULL, 'q'},
-		{"port", required_argument, NULL, 'p'},
-		{"pass", required_argument, NULL, 'w'},
+		{"port", required_argument, NULL, 't'},
+		{"spass", required_argument, NULL, 'w'},
 		{"storage", required_argument, NULL, 'b'},
 
 		{NULL,0,NULL,0}
@@ -183,6 +186,16 @@ int main(int argc, char** argv){
 				goto __exit_1;
 			}
 			break;
+		case 'p':	// --cpass option
+			if(appMode != MODE_CLIENT){
+				printf("Error: -p option work only in client mode. Exit.\n");
+				_rc = EXIT_FAILURE;
+				goto __exit_1;
+			}
+			_clientPass = (char*) malloc(MAX_PASS_LEN + 1 * sizeof(char));
+			memset(_clientPass, '\0', MAX_PASS_LEN + 1 * sizeof(char));
+			strncpy(_clientPass, optarg, strlen(optarg) * sizeof(char));
+			break;
 		case 'q':	// --conf option
 			if(appMode != MODE_SERVER && appMode != MODE_DAEMON){
 				logMsg(__func__, __LINE__, ERROR, "--conf option work only in server or daemon mode. Exit.");
@@ -203,7 +216,7 @@ int main(int argc, char** argv){
 			}
 			isLoadFromCfg = TRUE;
 			break;
-		case 'p':	// --port option
+		case 't':	// --port option
 			if(appMode != MODE_SERVER && appMode != MODE_DAEMON){
 				logMsg(__func__, __LINE__, ERROR, "--port option work only in server or daemon mode. Exit.");
 				_rc = EXIT_FAILURE;
@@ -213,7 +226,7 @@ int main(int argc, char** argv){
 			break;
 		case 'w':	// --pass option
 			if(appMode != MODE_SERVER && appMode != MODE_DAEMON){
-				logMsg(__func__, __LINE__, ERROR, "--pass option work only in server or daemon mode. Exit.");
+				logMsg(__func__, __LINE__, ERROR, "--spass option work only in server or daemon mode. Exit.");
 				_rc = EXIT_FAILURE;
 				goto __exit_1;
 			}
@@ -294,7 +307,7 @@ int main(int argc, char** argv){
 	else if(appMode == MODE_CLIENT){
 		logMsg(__func__, __LINE__, INFO, "Run Client mode. Connect to: %s:%d; Send file: %s", _serverAddr, serverPort, _sendFilePath);
 
-		_rc |= runClientMode(_serverAddr, DEFAULT_SERVER_PORT, _sendFilePath);
+		_rc |= runClientMode(_serverAddr, DEFAULT_SERVER_PORT, _sendFilePath, _clientPass);
 
 	}
 	else if(appMode == MODE_SERVER){
@@ -309,6 +322,8 @@ int main(int argc, char** argv){
 		free(_sendFilePath);
 	if(_serverAddr != NULL)
 		free(_serverAddr);
+	if(_clientPass != NULL)
+		free(_clientPass);
 	if(_confFilePath != NULL)
 		free(_confFilePath);
 	config_free(&servConf_st);
