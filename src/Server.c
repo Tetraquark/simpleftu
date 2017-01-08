@@ -8,12 +8,12 @@
 
 #include "../include/Server.h"
 
-int startServTCPListener(serverConfig_t _serverConf){
+int startServTCPListener(serverConfig_t* serverConf_ptr){
 	logMsg(__func__, __LINE__, INFO, "Start server TCP Listener.");
 
 	struct sockaddr_in tcpSockaddr;
 	int socketFd = 0;
-	int listenPort = _serverConf.port;
+	int listenPort = serverConf_ptr->port;
 	int sockCommPipes[2];
 	serverSysInfo_t serverThreadInfo;
 	pthread_t serverThread = 0;
@@ -33,7 +33,7 @@ int startServTCPListener(serverConfig_t _serverConf){
 
 	serverThreadInfo.inputCommsPipeFd = sockCommPipes[1];
 	serverThreadInfo.socketFd = socketFd;
-	serverThreadInfo.conf = _serverConf;
+	serverThreadInfo.conf = serverConf_ptr;
 
 	// start server TCP listener pthread
 	if( pthread_create(&serverThread, NULL, startListenTCPSocket, (void*) &serverThreadInfo) ){
@@ -84,6 +84,8 @@ void* startListenTCPSocket(void* threadData){
 				pthread_exit((void*) EXIT_FAILURE);
 			}
 
+			logMsg(__func__, __LINE__, ERROR, "Accepted connection from: %s", inet_ntoa(tcpInputClient_addr.sin_addr));
+
 			// TODO: Грязный лайфхак! Надо переделать
 			serverSysInfo_t peerInfo;
 			peerInfo.conf = serverInfo->conf;
@@ -117,36 +119,36 @@ void* startListenTCPSocket(void* threadData){
  * 4) client send file
  */
 void* startPeerThread(void* threadData){
-	logMsg(__func__, __LINE__, INFO, "New connected peer. Start peer pthread.");
+	logMsg(__func__, __LINE__, INFO, "Start peer pthread.");
 	serverSysInfo_t* connectInfo = (serverSysInfo_t*) threadData;
-	char* servPassword = connectInfo->conf.password;		// server password
-	char* servDownloadFolder = connectInfo->conf.storageFolderPath;
+	char* servPassword = connectInfo->conf->password;		// server password
+	char* servDownloadFolder = connectInfo->conf->storageFolderPath;
 	int inputConnectFd = connectInfo->socketFd;				// input connection FD
 	ssize_t inputMsgSize = 0;
 
 	// get input password
-	char* inputPassBuff = (char*) malloc(MAX_PASS_LEN * sizeof(char));
-	memset(inputPassBuff, 0, MAX_PASS_LEN * sizeof(char));
-	if((inputMsgSize = recvfrom(inputConnectFd, inputPassBuff, MAX_PASS_LEN * sizeof(char), 0, NULL, 0)) < 0){
+	char* inputPassBuff = (char*) malloc(MAX_PASS_LEN + 1 * sizeof(char));
+	memset(inputPassBuff, 0, MAX_PASS_LEN + 1 * sizeof(char));
+	if((inputMsgSize = recvfrom(inputConnectFd, inputPassBuff, MAX_PASS_LEN + 1 * sizeof(char), 0, NULL, 0)) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Peer password receiving error. Abort peer connection. %s", inputPassBuff);
 		// Receiving error
 		// TODO: free mem and close descriptors
-		return EXIT_FAILURE;
+		return (void*) EXIT_FAILURE;
 	}
 
-	logMsg(__func__, __LINE__, INFO, "Recv peer paswd: %s", inputPassBuff);
 
 	// check input password
-	if(checkPassword(servPassword, inputPassBuff) == FALSE){
-		logMsg(__func__, __LINE__, INFO, "Wrong input password by peer. Abort peer connection.");
+	bool_t isPassCorrect = checkPassword(servPassword, inputPassBuff);
+	logMsg(__func__, __LINE__, INFO, "Recv peer passwd: %s - %s", inputPassBuff, isPassCorrect == FALSE ? "wrong" : "correct");
+
+	if(isPassCorrect == FALSE){
 		// if wrong password - close connection and close pthread
 		// TODO: free mem and close descriptors
 		close(inputConnectFd);
 		free(inputPassBuff);
-		return EXIT_FAILURE;
+		return (void*) EXIT_FAILURE;
 	}
 	else{
-		logMsg(__func__, __LINE__, INFO, "Correct input password by peer.");
 		free(inputPassBuff);
 	}
 
@@ -163,10 +165,8 @@ void* startPeerThread(void* threadData){
 		// Receiving error
 		// TODO: free mem and close descriptors
 		free(fileInfoMsgBuff);
-		return EXIT_FAILURE;
+		return (void*) EXIT_FAILURE;
 	}
-
-	logMsg(__func__, __LINE__, INFO, "Recved peer file info msg: %s", fileInfoMsgBuff);
 
 	// deserialize input file info message
 	if(deserialize_FileInfoMsg(&recvInputFileInfo, fileInfoMsgBuff, ';')){
@@ -174,9 +174,11 @@ void* startPeerThread(void* threadData){
 		// Deserialize error
 		// TODO: free mem and close descriptors
 		free(fileInfoMsgBuff);
-		return EXIT_FAILURE;
+		return (void*) EXIT_FAILURE;
 	}
-	//free(fileInfoMsgBuff);
+
+	logMsg(__func__, __LINE__, INFO, "Received file info msg of peer. Filesize %lld; Filename: %s",
+			recvInputFileInfo.fileSize, recvInputFileInfo.fileName);
 
 	// builds full file path
 	size_t recvFuleFullPathSize = strlen(servDownloadFolder) * sizeof(char) + strlen(recvInputFileInfo.fileName) * sizeof(char);
@@ -186,12 +188,14 @@ void* startPeerThread(void* threadData){
 	strncpy(&recvFileLocalFullPath[strlen(servDownloadFolder)], recvInputFileInfo.fileName, strlen(recvInputFileInfo.fileName));
 
 	// open new file to write mode
-	int localFileDescr = open(recvFileLocalFullPath, O_CREAT | O_WRONLY);
+#ifdef __linux__
+	int localFileDescr = open(recvFileLocalFullPath, O_CREAT | O_WRONLY, S_IRUSR | S_IRGRP | S_IROTH);
+#endif
 	if(localFileDescr == -1){
 		logMsg(__func__, __LINE__, ERROR, "Can't create local tmp file. Abort peer connection.");
 		// Local file opening error
 		// TODO: free mem and close descriptors
-		return EXIT_FAILURE;
+		return (void*) EXIT_FAILURE;
 	}
 
 	// init MD5 hash checker
@@ -211,9 +215,11 @@ void* startPeerThread(void* threadData){
 		logMsg(__func__, __LINE__, ERROR, "Peer file md5 hash message receiving error. Abort peer connection.");
 		// Receiving error
 		// TODO: free mem and close descriptors
-		return EXIT_FAILURE;
+		return (void*) EXIT_FAILURE;
 	}
-	logMsg(__func__, __LINE__, INFO, "Peer  hash: %s", peerFileMd5HashStr);
+
+	logMsg(__func__, __LINE__, INFO, "Received hash:\t %s", peerFileMd5HashStr);
+	logMsg(__func__, __LINE__, INFO, "Start file transferring");
 
 	// recv file
 	file_size_t recvTotalBytes = 0;
@@ -232,7 +238,7 @@ void* startPeerThread(void* threadData){
 			logMsg(__func__, __LINE__, ERROR, "Error in write receiving file data into local file. Abort peer connection.");
 			// File writing error
 			// TODO: free mem and close descriptors
-			return EXIT_FAILURE;
+			return (void*) EXIT_FAILURE;
 		}
 
 		if(recvTotalBytes >= fullRemainFileSize)
@@ -248,7 +254,7 @@ void* startPeerThread(void* threadData){
 	// convert input md5 hash to byte format
 	char* downloadedHash = (char*) malloc(MD5_BLOCK_SIZE * 2 * sizeof(char));
 	fromByteArrToHexStr(downloadedFileHash_md5, MD5_BLOCK_SIZE, &downloadedHash);
-	logMsg(__func__, __LINE__, INFO, "Counted hash: %s", downloadedHash);
+	logMsg(__func__, __LINE__, INFO, "Counted hash:\t %s", downloadedHash);
 	fromHexStrToByteArr(peerFileMd5HashStr, MD5_BLOCK_SIZE * 2, peerFileMd5Hash);
 
 	netmsg_sending_res_t fileTransferRes;
@@ -268,7 +274,8 @@ void* startPeerThread(void* threadData){
 		fsync(localFileDescr);
 	}
 
-	logMsg(__func__, __LINE__, INFO, "Transfer is successful. Close connection.");
+	logMsg(__func__, __LINE__, INFO, "Transfer is %s. Close connection.",
+			fileTransferRes == FAIL ? "unsuccessful" : "successful");
 
 	/*
 	if(send(inputConnectFd, &fileTransferRes, sizeof(fileTransferRes), 0) < 0){

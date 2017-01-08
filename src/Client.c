@@ -54,10 +54,10 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 	}
 
 	// send password
-	char* passw = (char*) malloc(MAX_PASS_LEN * sizeof(char));
-	memcpy(passw, DEBUG_PASSWORD, MAX_PASS_LEN * sizeof(char));
+	char* passw = (char*) malloc(MAX_PASS_LEN + 1 * sizeof(char));
+	memcpy(passw, DEBUG_PASSWORD, MAX_PASS_LEN + 1 * sizeof(char));
 	logMsg(__func__, __LINE__, INFO, "Try to send password: %s", passw);
-	if(send(socketDescr, passw, MAX_PASS_LEN * sizeof(char), 0) < 0){
+	if(send(socketDescr, passw, MAX_PASS_LEN + 1 * sizeof(char), 0) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error in sending password to server. Abort connection.");
 		// Sending result message error
 		// TODO: free mem and close descriptors
@@ -132,6 +132,7 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 	close(fd);
 	fd = open(sendingfile_path, O_RDONLY);
 
+	int _transfProgress = 0;
 	while( ((bytes_readed = read(fd, fdBuff, SENDING_FILE_PACKET_SIZE * sizeof(char))) > 0) ){
 
 		if( (bytes_sended = send(socketDescr, fdBuff, bytes_readed, 0)) < 0){
@@ -144,12 +145,16 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 		}
 
 		total_bytes_sended += bytes_sended;
+
+		_transfProgress = (total_bytes_sended * 100) / fileSize;
+		// TODO: create transfer progress output
+
 		bytes_sended = 0;
 		memset(fdBuff, '\0', SENDING_FILE_PACKET_SIZE);
 	}
-	logMsg(__func__, __LINE__, INFO, "Total send bytes: %lld", total_bytes_sended);
+	logMsg(__func__, __LINE__, INFO, "Total send file bytes: %lld", total_bytes_sended);
 
-	logMsg(__func__, __LINE__, INFO, "File transfered.");
+	logMsg(__func__, __LINE__, INFO, "File successfully transferred.");
 
 	shutdown(socketDescr, SHUT_WR);
 	//close(socketDescr);

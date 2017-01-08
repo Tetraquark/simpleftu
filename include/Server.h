@@ -17,6 +17,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 
 #include "../BuildConfig.h"
 #include "BasicTypes.h"
@@ -25,7 +26,7 @@
 #include "Serializer.h"
 #include "Crypto.h"
 
-int startServTCPListener(serverConfig_t _serverConf);
+int startServTCPListener(serverConfig_t* serverConf_ptr);
 
 void* startListenTCPSocket(void* threadData);
 

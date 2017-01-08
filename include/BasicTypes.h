@@ -67,7 +67,7 @@ typedef struct __serverConfig serverConfig_t;
 struct __serverSysInfo{
 	int socketFd;
 	int inputCommsPipeFd;
-	serverConfig_t conf;
+	serverConfig_t* conf;
 };
 typedef struct __serverSysInfo serverSysInfo_t;
 

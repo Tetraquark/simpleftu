@@ -26,6 +26,18 @@
 #define DEFAULT_SERVER_PORT 10888
 #endif
 
+#ifdef DEBUG
+#define DEFAULT_CONFFILE_NAME DEBUG_CONFFILE_NAME
+#else
+#define DEFAULT_CONFFILE_NAME "config.cfg"
+#endif
+
+#ifdef DEBUG
+#define DEFAULT_STORAGEDIR_NAME DEBUG_SERVER_FILES_STORAGE_PATH
+#else
+#define DEFAULT_STORAGEDIR_NAME "sftu_storage"
+#endif
+
 /*
  * MAX_FILE_SIZE
  * Maximum sending file size;
@@ -43,9 +55,11 @@
  * MAX_PASS_LEN
  * Maximum password length in char symbols;
  */
-#define MAX_PASS_LEN 8 + 1
+#define MAX_PASS_LEN 8
 #define MAX_FILENAME_LEN 128
 #define MAX_FULL_FILE_PATH_LEN MAX_FILENAME_LEN + 128
+
+#define MAX_STORAGEDIR_PATH_LEN MAX_FULL_FILE_PATH_LEN + MAX_FILENAME_LEN
 
 #define SENDING_FILE_PACKET_SIZE 1024
 

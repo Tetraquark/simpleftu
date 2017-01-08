@@ -32,7 +32,7 @@ int config_loadFromFile(char* conf_file_path, OUT_ARG serverConfig_t* serv_conf_
     int _port = 0;
     _rc = config_lookup_int(&_cfg, SFTU_CONFIG_FIELDNAME_PORT, &_port);
     if(_rc == CONFIG_FALSE){
-    	logMsg(__func__, __LINE__, ERROR, "Error parsing field %s", SFTU_CONFIG_FIELDNAME_PORT);
+    	logMsg(__func__, __LINE__, ERROR, "Error parsing config field %s", SFTU_CONFIG_FIELDNAME_PORT);
         config_destroy(&_cfg);
         return EXIT_FAILURE;
     }
@@ -44,7 +44,7 @@ int config_loadFromFile(char* conf_file_path, OUT_ARG serverConfig_t* serv_conf_
     char* _storage_folder;
     _rc = config_lookup_string(&_cfg, SFTU_CONFIG_FIELDNAME_STORAGE_DIR_PATH, &_storage_folder);
     if(_rc == CONFIG_FALSE){
-    	logMsg(__func__, __LINE__, ERROR, "Error parsing field %s", SFTU_CONFIG_FIELDNAME_STORAGE_DIR_PATH);
+    	logMsg(__func__, __LINE__, ERROR, "Error parsing config field %s", SFTU_CONFIG_FIELDNAME_STORAGE_DIR_PATH);
         config_destroy(&_cfg);
         return EXIT_FAILURE;
     }
@@ -57,12 +57,12 @@ int config_loadFromFile(char* conf_file_path, OUT_ARG serverConfig_t* serv_conf_
     char* _password;
     _rc = config_lookup_string(&_cfg, SFTU_CONFIG_FIELDNAME_PASSWORD, &_password);
     if(_rc == CONFIG_FALSE){
-    	logMsg(__func__, __LINE__, ERROR, "Error parsing field %s", SFTU_CONFIG_FIELDNAME_PASSWORD);
+    	logMsg(__func__, __LINE__, ERROR, "Error parsing config field %s", SFTU_CONFIG_FIELDNAME_PASSWORD);
         config_destroy(&_cfg);
         return EXIT_FAILURE;
     }
-    serv_conf_ptr->password = (char*) malloc(MAX_PASS_LEN * sizeof(char));		// will free in config_free()
-    memset(serv_conf_ptr->password, '\0', MAX_PASS_LEN * sizeof(char));
+    serv_conf_ptr->password = (char*) malloc(MAX_PASS_LEN + 1 * sizeof(char));		// will free in config_free()
+    memset(serv_conf_ptr->password, '\0', MAX_PASS_LEN + 1 * sizeof(char));
     strncpy(serv_conf_ptr->password, _password, strlen(_password) * sizeof(char));
 
     /*
