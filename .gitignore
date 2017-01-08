@@ -15,8 +15,8 @@ local.properties
 .settings/
 .loadpath
 .recommenders
-#/Debug
-#/Release
+/Debug
+/Release
 
 # Eclipse Core
 .project
