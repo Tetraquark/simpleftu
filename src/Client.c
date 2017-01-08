@@ -17,7 +17,7 @@
  * 3) client send file md5 hash
  * 4) client send file
  */
-int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_FULL_FILE_PATH_LEN], char* serv_pass){
+int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_FULL_FILE_PATH_LEN + 1], char* serv_pass){
 	logMsg(__func__, __LINE__, INFO, "Start DEBUG_sendTestFile: serv_ip: %s ; serv_port: %d ; serv_pass: %s ; send_filepath: %s",
 			serv_ip, serv_port, serv_pass, sendingfile_path);
 
@@ -58,7 +58,7 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 	//char* passw = (char*) malloc(MAX_PASS_LEN + 1 * sizeof(char));
 	//memcpy(passw, DEBUG_PASSWORD, MAX_PASS_LEN + 1 * sizeof(char));
 	logMsg(__func__, __LINE__, INFO, "Try to send password: %s", serv_pass);
-	if(send(socketDescr, serv_pass, MAX_PASS_LEN + 1 * sizeof(char), 0) < 0){
+	if(send(socketDescr, serv_pass, MAX_PASS_LEN * sizeof(char), 0) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error in sending password to server. Abort connection.");
 		// Sending result message error
 		// TODO: free mem and close descriptors
@@ -74,8 +74,9 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 #ifdef __linux__
 	char* fileName_str = basename(sendingfile_path);
 #endif
-	memset(fileInfoStruct.fileName, '\0', 0);
-	memcpy(fileInfoStruct.fileName, fileName_str, MAX_FILENAME_LEN * sizeof(char));
+	memset(fileInfoStruct.fileName, '\0', MAX_FILENAME_LEN * sizeof(char));
+	// TODO: add sizes cmp for cstrs
+	memcpy(fileInfoStruct.fileName, fileName_str, strlen(fileName_str) * sizeof(char));
 	fileInfoStruct.fileSize = fileSize;
 
 	char* fileInfoMsg_ptr = NULL;
@@ -96,24 +97,24 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 	free(fileInfoMsg_ptr);
 
 	file_size_t bytes_readed = 0;
-	char* fdBuff = (char*) malloc(SENDING_FILE_PACKET_SIZE * sizeof(char));
-	memset(fdBuff, '\0', SENDING_FILE_PACKET_SIZE);
+	char* fdBuff = (char*) malloc((SENDING_FILE_PACKET_SIZE) * sizeof(char));
+	memset(fdBuff, '\0', (SENDING_FILE_PACKET_SIZE) * sizeof(char));
 	while( ((bytes_readed = read(fd, fdBuff, SENDING_FILE_PACKET_SIZE * sizeof(char))) > 0) ){
 		md5_update(&ctx, fdBuff, bytes_readed);
-		memset(fdBuff, '\0', SENDING_FILE_PACKET_SIZE);
+		memset(fdBuff, '\0', (SENDING_FILE_PACKET_SIZE) * sizeof(char));
 	}
 
 	BYTE hashArr[MD5_BLOCK_SIZE];
 	memset(hashArr, '\0', MD5_BLOCK_SIZE * sizeof(BYTE));
 	md5_final(&ctx, hashArr);
 
-	char* hashArrStr = (char*) malloc(MD5_BLOCK_SIZE * 2 * sizeof(char));
-	memset(hashArrStr, '\0', MD5_BLOCK_SIZE * 2 * sizeof(char));
+	char* hashArrStr = (char*) malloc((MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
+	memset(hashArrStr, '\0', (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
 	fromByteArrToHexStr(hashArr, MD5_BLOCK_SIZE, &hashArrStr);
 
 	// send file md5 hash
 	logMsg(__func__, __LINE__, INFO, "Send md5 hash: %s", hashArrStr);
-	if(send(socketDescr, hashArrStr, MD5_BLOCK_SIZE * 2 * sizeof(char), 0) < 0){
+	if(send(socketDescr, hashArrStr, (MD5_BLOCK_SIZE * 2) * sizeof(char), 0) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error in sending file md5 hash to server. Abort connection.");
 		// Sending result message error
 		// TODO: free mem and close descriptors

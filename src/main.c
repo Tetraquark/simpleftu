@@ -166,8 +166,8 @@ int main(int argc, char** argv){
 				_rc = EXIT_FAILURE;
 				goto __exit_1;
 			}
-			_sendFilePath = (char*) malloc(strlen(optarg) + 1 * sizeof(char));
-			memset(_sendFilePath, '\0', strlen(optarg) + 1 * sizeof(char));
+			_sendFilePath = (char*) malloc(MAX_FULL_FILE_PATH_LEN + 1 * sizeof(char));
+			memset(_sendFilePath, '\0', MAX_FULL_FILE_PATH_LEN + 1 * sizeof(char));
 			strncpy(_sendFilePath, optarg, strlen(optarg) * sizeof(char));
 			break;
 		case 'a':
@@ -176,8 +176,8 @@ int main(int argc, char** argv){
 				_rc = EXIT_FAILURE;
 				goto __exit_1;
 			}
-			_serverAddr = (char*) malloc(IPADDR_STR_LEN * sizeof(char));
-			memset(_serverAddr, '\0', IPADDR_STR_LEN * sizeof(char));
+			_serverAddr = (char*) malloc(IPADDR_STR_LEN + 1 * sizeof(char));
+			memset(_serverAddr, '\0', IPADDR_STR_LEN + 1 * sizeof(char));
 			if(parse_ipaddrStrToParts(optarg, &_serverAddr, &serverPort)){
 				logMsg(__func__, __LINE__, ERROR,
 						"Parsing server address error. Correct input string format: \"IP:PORT\"(127.0.0.1:10888). Exit.");
@@ -204,8 +204,8 @@ int main(int argc, char** argv){
 			}
 			if(optarg != NULL){
 				// load conf from optarg path
-				_confFilePath = (char*) malloc(strlen(optarg) + 1 * sizeof(char));
-				memset(_confFilePath, '\0', strlen(optarg) + 1 * sizeof(char));
+				_confFilePath = (char*) malloc(MAX_STORAGEDIR_PATH_LEN + 1 * sizeof(char));
+				memset(_confFilePath, '\0', MAX_STORAGEDIR_PATH_LEN + 1 * sizeof(char));
 				strncpy(_confFilePath, optarg, strlen(optarg) * sizeof(char));
 			}
 			else{

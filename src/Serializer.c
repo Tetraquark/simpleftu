@@ -24,9 +24,10 @@ ssize_t serialize_FileInfoMsg(file_info_msg_t inStruct, const char delimSymbol, 
 	ssize_t _buffSize = _fileNameStr_len * sizeof(char) +
 			_fileSizeStr_len * sizeof(char) +
 			//fileHashMd5Str_len * sizeof(char) +
-			2 * sizeof(char);
+			2 * sizeof(char) + 1;
 
 	char* _serializedMsg = (char*) malloc(_buffSize);
+	memset(_serializedMsg, '\0', _buffSize);
 
 	// paste fileName field
 	strncpy(_serializedMsg, inStruct.fileName, _fileNameStr_len * sizeof(char));

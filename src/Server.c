@@ -127,15 +127,14 @@ void* startPeerThread(void* threadData){
 	ssize_t inputMsgSize = 0;
 
 	// get input password
-	char* inputPassBuff = (char*) malloc(MAX_PASS_LEN + 1 * sizeof(char));
-	memset(inputPassBuff, 0, MAX_PASS_LEN + 1 * sizeof(char));
-	if((inputMsgSize = recvfrom(inputConnectFd, inputPassBuff, MAX_PASS_LEN + 1 * sizeof(char), 0, NULL, 0)) < 0){
+	char* inputPassBuff = (char*) malloc((MAX_PASS_LEN + 1) * sizeof(char));
+	memset(inputPassBuff, 0, (MAX_PASS_LEN + 1) * sizeof(char));
+	if((inputMsgSize = recvfrom(inputConnectFd, inputPassBuff, MAX_PASS_LEN * sizeof(char), 0, NULL, 0)) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Peer password receiving error. Abort peer connection. %s", inputPassBuff);
 		// Receiving error
 		// TODO: free mem and close descriptors
 		return (void*) EXIT_FAILURE;
 	}
-
 
 	// check input password
 	bool_t isPassCorrect = checkPassword(servPassword, inputPassBuff);
@@ -156,7 +155,7 @@ void* startPeerThread(void* threadData){
 
 	// get file info struct
 	file_info_msg_t recvInputFileInfo;
-	size_t inputMsgBuffSize = sizeof(char) * MAX_FILESIZE_CHAR_NUM + sizeof(char) * MAX_FILENAME_LEN;
+	size_t inputMsgBuffSize = sizeof(char) * MAX_FILESIZE_CHAR_NUM + sizeof(char) * MAX_FILENAME_LEN + 1;
 	char* fileInfoMsgBuff = (char*) malloc(inputMsgBuffSize);
 	memset(fileInfoMsgBuff, 0, inputMsgBuffSize);
 
@@ -181,13 +180,14 @@ void* startPeerThread(void* threadData){
 			recvInputFileInfo.fileSize, recvInputFileInfo.fileName);
 
 	// builds full file path
-	size_t recvFuleFullPathSize = strlen(servDownloadFolder) * sizeof(char) + strlen(recvInputFileInfo.fileName) * sizeof(char);
+	size_t recvFuleFullPathSize = strlen(servDownloadFolder) * sizeof(char) + strlen(recvInputFileInfo.fileName) * sizeof(char) + 1;
 	char* recvFileLocalFullPath = (char*) malloc(recvFuleFullPathSize);
 	memset(recvFileLocalFullPath, 0, recvFuleFullPathSize);
-	strncpy(recvFileLocalFullPath, servDownloadFolder, strlen(servDownloadFolder));
-	strncpy(&recvFileLocalFullPath[strlen(servDownloadFolder)], recvInputFileInfo.fileName, strlen(recvInputFileInfo.fileName));
+	strncpy(recvFileLocalFullPath, servDownloadFolder, strlen(servDownloadFolder) * sizeof(char));
+	strncpy(&recvFileLocalFullPath[strlen(servDownloadFolder)], recvInputFileInfo.fileName, strlen(recvInputFileInfo.fileName) * sizeof(char));
 
 	// open new file to write mode
+	logMsg(__func__, __LINE__, INFO, "Try to open tmp file in storage: %s", recvFileLocalFullPath);
 #ifdef __linux__
 	int localFileDescr = open(recvFileLocalFullPath, O_CREAT | O_WRONLY, S_IRUSR | S_IRGRP | S_IROTH);
 #endif
@@ -209,8 +209,8 @@ void* startPeerThread(void* threadData){
 	// get file md5 hash from peer
 	BYTE peerFileMd5Hash[MD5_BLOCK_SIZE];
 	memset(peerFileMd5Hash, '\0', MD5_BLOCK_SIZE * sizeof(BYTE));
-	char peerFileMd5HashStr[MD5_BLOCK_SIZE * 2];
-	memset(peerFileMd5HashStr, '\0', MD5_BLOCK_SIZE * 2 * sizeof(char));
+	char peerFileMd5HashStr[MD5_BLOCK_SIZE * 2 + 1];
+	memset(peerFileMd5HashStr, '\0', (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
 	if((inputMsgSize = recvfrom(inputConnectFd, peerFileMd5HashStr, MD5_BLOCK_SIZE * 2 * sizeof(char), 0, NULL, 0)) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Peer file md5 hash message receiving error. Abort peer connection.");
 		// Receiving error
@@ -252,7 +252,8 @@ void* startPeerThread(void* threadData){
 	md5_final(&ctx, downloadedFileHash_md5);
 
 	// convert input md5 hash to byte format
-	char* downloadedHash = (char*) malloc(MD5_BLOCK_SIZE * 2 * sizeof(char));
+	char* downloadedHash = (char*) malloc((MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
+	memset(downloadedHash, '\0', (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
 	fromByteArrToHexStr(downloadedFileHash_md5, MD5_BLOCK_SIZE, &downloadedHash);
 	logMsg(__func__, __LINE__, INFO, "Counted hash:\t %s", downloadedHash);
 	fromHexStrToByteArr(peerFileMd5HashStr, MD5_BLOCK_SIZE * 2, peerFileMd5Hash);

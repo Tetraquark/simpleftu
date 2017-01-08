@@ -48,7 +48,8 @@ int config_loadFromFile(char* conf_file_path, OUT_ARG serverConfig_t* serv_conf_
         config_destroy(&_cfg);
         return EXIT_FAILURE;
     }
-    serv_conf_ptr->storageFolderPath = (char*) malloc(strlen(_storage_folder) * sizeof(char));		// will free in config_free()
+    serv_conf_ptr->storageFolderPath = (char*) malloc(MAX_STORAGEDIR_PATH_LEN + 1 * sizeof(char));		// will free in config_free()
+    memset(serv_conf_ptr->storageFolderPath, '\0', MAX_STORAGEDIR_PATH_LEN + 1 * sizeof(char));
     strncpy(serv_conf_ptr->storageFolderPath, _storage_folder, strlen(_storage_folder) * sizeof(char));
 
     /*

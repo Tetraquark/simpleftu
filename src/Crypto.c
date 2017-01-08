@@ -27,8 +27,6 @@ int fromByteArrToHexStr(const BYTE* byteArr, int byteArrSize, char** out_strArr)
 	if(out_strArr == NULL || out_strArr == NULL || byteArrSize % 2 != 0)
 		return EXIT_FAILURE;
 
-	memset(*out_strArr, '\0', byteArrSize * 2 * sizeof(char));
-
 	for(int i = 0; i < byteArrSize; i++){
 		sprintf(*out_strArr + i * 2, "%02x", byteArr[i]);
 	}
