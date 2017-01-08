@@ -64,4 +64,4 @@ local.properties
 *.o
 *.d
 *.exe
-/Debug/SimpleFileTransferUtility
+

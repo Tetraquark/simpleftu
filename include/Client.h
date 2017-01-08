@@ -20,6 +20,7 @@
 #include "BasicTypes.h"
 #include "BasicConstants.h"
 #include "Common.h"
+#include "md5.h"
 #include "Serializer.h"
 
 #ifdef DEBUG

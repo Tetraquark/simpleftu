@@ -22,6 +22,7 @@
 #include "../BuildConfig.h"
 #include "BasicTypes.h"
 #include "BasicConstants.h"
+#include "md5.h"
 #include "Common.h"
 #include "Serializer.h"
 #include "Crypto.h"
