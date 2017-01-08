@@ -76,14 +76,12 @@ int deserialize_FileInfoMsg(OUT_ARG file_info_msg_t* outStruct, char* msgBuff, c
 }
 
 int parse_ipaddrStrToParts(char* addr_str, OUT_ARG char** ip_str, OUT_ARG int* port){
-	char delimSymbol = ':';
-
-    char* _pch = strtok(addr_str, &delimSymbol);
+    char* _pch = strtok(addr_str, ":");
     if(_pch == NULL)
     	return EXIT_FAILURE;
     strncpy(*ip_str, _pch, strlen(_pch) * sizeof(char));
 
-    _pch = strtok(NULL, &delimSymbol);
+    _pch = strtok(NULL, ":");
     if(_pch == NULL)
     	return EXIT_FAILURE;
     (*port) = atoi(_pch);

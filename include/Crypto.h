@@ -10,6 +10,8 @@
 #define INCLUDE_CRYPTO_H_
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "../BuildConfig.h"
 #include "BasicConstants.h"

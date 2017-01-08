@@ -209,9 +209,9 @@ void* startPeerThread(void* threadData){
 	// get file md5 hash from peer
 	BYTE peerFileMd5Hash[MD5_BLOCK_SIZE];
 	memset(peerFileMd5Hash, '\0', MD5_BLOCK_SIZE * sizeof(BYTE));
-	char peerFileMd5HashStr[MD5_BLOCK_SIZE * 2 + 1];
+	char* peerFileMd5HashStr = (char*) malloc((MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
 	memset(peerFileMd5HashStr, '\0', (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
-	if((inputMsgSize = recvfrom(inputConnectFd, peerFileMd5HashStr, MD5_BLOCK_SIZE * 2 * sizeof(char), 0, NULL, 0)) < 0){
+	if((inputMsgSize = recvfrom(inputConnectFd, peerFileMd5HashStr, (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char), 0, NULL, 0)) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Peer file md5 hash message receiving error. Abort peer connection.");
 		// Receiving error
 		// TODO: free mem and close descriptors
@@ -290,6 +290,7 @@ void* startPeerThread(void* threadData){
 	// close pthread
 	close(inputConnectFd);
 	close(localFileDescr);
+	free(peerFileMd5HashStr);
 	free(downloadedHash);
 	free(fileInfoMsgBuff);
 	free(recvFileLocalFullPath);

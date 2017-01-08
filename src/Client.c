@@ -114,7 +114,7 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 
 	// send file md5 hash
 	logMsg(__func__, __LINE__, INFO, "Send md5 hash: %s", hashArrStr);
-	if(send(socketDescr, hashArrStr, (MD5_BLOCK_SIZE * 2) * sizeof(char), 0) < 0){
+	if(send(socketDescr, hashArrStr, (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char), 0) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error in sending file md5 hash to server. Abort connection.");
 		// Sending result message error
 		// TODO: free mem and close descriptors
@@ -123,8 +123,6 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 		free(hashArrStr);
 		return EXIT_FAILURE;
 	}
-
-	free(hashArrStr);
 
 	// read file data block, count md5 hash, send file data block
 	bytes_readed = 0;
@@ -160,6 +158,7 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 
 	shutdown(socketDescr, SHUT_WR);
 	//close(socketDescr);
+	free(hashArrStr);
 	close(fd);
 	return EXIT_SUCCESS;
 }

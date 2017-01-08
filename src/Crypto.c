@@ -9,10 +9,10 @@
 #include "../include/Crypto.h"
 
 int fromHexStrToByteArr(const char* hexStr, int hexStrSize, BYTE* out_byteArr){
-	if(out_byteArr == NULL || hexStr == NULL || hexStrSize % 2 != 0)
+	if(out_byteArr == NULL || hexStr == NULL)
 		return EXIT_FAILURE;
 
-	memset(out_byteArr, '\0', hexStrSize / 2 * sizeof(char));
+	//memset(out_byteArr, '\0', hexStrSize / 2 * sizeof(char));
 	const char* pos = hexStr;
 
 	for(int i = 0; i < hexStrSize; i++){
@@ -24,7 +24,7 @@ int fromHexStrToByteArr(const char* hexStr, int hexStrSize, BYTE* out_byteArr){
 }
 
 int fromByteArrToHexStr(const BYTE* byteArr, int byteArrSize, char** out_strArr){
-	if(out_strArr == NULL || out_strArr == NULL || byteArrSize % 2 != 0)
+	if(out_strArr == NULL || out_strArr == NULL)
 		return EXIT_FAILURE;
 
 	for(int i = 0; i < byteArrSize; i++){

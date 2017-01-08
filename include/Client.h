@@ -15,6 +15,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifdef __linux__
+#include <libgen.h>
+#endif
 
 #include "../BuildConfig.h"
 #include "BasicTypes.h"
