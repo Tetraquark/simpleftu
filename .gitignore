@@ -15,8 +15,8 @@ local.properties
 .settings/
 .loadpath
 .recommenders
-/Debug
-/Release
+#/Debug
+#/Release
 
 # Eclipse Core
 .project
@@ -57,6 +57,11 @@ local.properties
 # Code Recommenders
 .recommenders/
 
+###############################################################
+###############################################################
 
-###############################################################
-###############################################################
+# Binary files
+*.o
+*.d
+*.exe
+/Debug/SimpleFileTransferUtility
