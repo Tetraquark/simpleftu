@@ -129,6 +129,8 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 	file_size_t total_bytes_sended = 0;
 	file_size_t bytes_sended = 0;
 
+	logMsg(__func__, __LINE__, INFO, "Start file transferring");
+
 	close(fd);
 	fd = open(sendingfile_path, O_RDONLY);
 

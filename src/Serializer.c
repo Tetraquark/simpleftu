@@ -21,10 +21,10 @@ ssize_t serialize_FileInfoMsg(file_info_msg_t inStruct, const char delimSymbol, 
 #endif
 	int _fileSizeStr_len = strlen(_fileSizeMsgStr);
 
-	ssize_t _buffSize = _fileNameStr_len * sizeof(char) +
-			_fileSizeStr_len * sizeof(char) +
-			//fileHashMd5Str_len * sizeof(char) +
-			2 * sizeof(char) + 1;
+	ssize_t _buffSize = sizeof(char) * MAX_FILESIZE_CHAR_NUM + sizeof(char) * MAX_FILENAME_LEN + 1;
+			//_fileNameStr_len * sizeof(char) +
+			//_fileSizeStr_len * sizeof(char) +
+			//2 * sizeof(char) + 1;
 
 	char* _serializedMsg = (char*) malloc(_buffSize);
 	memset(_serializedMsg, '\0', _buffSize);
@@ -35,11 +35,7 @@ ssize_t serialize_FileInfoMsg(file_info_msg_t inStruct, const char delimSymbol, 
 	strncpy(&_serializedMsg[_fileNameStr_len], &delimSymbol, sizeof(char));
 	// paste fileSize field
 	strncpy(&_serializedMsg[_fileNameStr_len + 1], _fileSizeMsgStr, _fileSizeStr_len * sizeof(char));
-	// paste delim symbol
-	//memcpy(&_serializedMsg[_fileNameStr_len + 1 + _fileSizeStr_len], &delimSymbol, sizeof(char));
-	// paste fileHash_md5 field
-	//memcpy(&_serializedMsg[_fileNameStr_len + 1 + _fileSizeStr_len + 1], fileMd5HashStr, fileHashMd5Str_len * sizeof(char));
-	strncpy(&_serializedMsg[_fileNameStr_len + 1 + _fileSizeStr_len + 1], &delimSymbol, sizeof(char));
+	//strncpy(&_serializedMsg[_fileNameStr_len + 1 + _fileSizeStr_len + 1], &delimSymbol, sizeof(char));
 
 	*out_fileInfoMsg = _serializedMsg;
 	return _buffSize;
