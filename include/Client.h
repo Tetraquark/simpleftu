@@ -32,4 +32,6 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 
 int initTcpConnSocket(struct sockaddr_in* __tcpsocket_addr, int* __socket_desc, char* __server_addr, int __server_port);
 
+int sendFile();
+
 #endif /* INCLUDE_CLIENT_H_ */

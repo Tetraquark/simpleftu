@@ -41,3 +41,37 @@ void logMsg(const char* __func_name__, const int __line_number__, log_msg_type_t
 #else
 #endif
 }
+
+file_size_t getFileSize(char* file_name){
+	file_size_t _file_size = 0;
+#ifdef __linux__
+	struct stat _fileStatbuff;
+	int fd = open(file_name, O_RDONLY);
+	if(fd == -1){
+		_file_size = -1;
+	}
+	else{
+		if ((fstat(fd, &_fileStatbuff) != 0) || (!S_ISREG(_fileStatbuff.st_mode))) {
+			_file_size = -1;
+		}
+		else{
+			_file_size = _fileStatbuff.st_size;
+		}
+		close(fd);
+	}
+#elif _WIN32
+
+#else
+	FILE* fd = fopen(file_name, "r");
+	if(fd == NULL){
+		_file_size = -1;
+	}
+	else{
+		while(getc(fd) != EOF)
+			_file_size++;
+		fclose(fd);
+	}
+
+#endif
+	return _file_size;
+}

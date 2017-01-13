@@ -23,25 +23,22 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 
 	struct sockaddr_in tcpsocket_addr_strct;
 	int socketDescr = 0;
-
 	MD5_CTX ctx;
 
-	// open file
-	struct stat fileStatbuff;
-	file_size_t fileSize = 0;
+	// get file size
+	file_size_t _fileSize = 0;
+	_fileSize = getFileSize(sendingfile_path);
+	if(_fileSize == -1){
+		logMsg(__func__, __LINE__, ERROR, "Cant open %s file.", sendingfile_path);
+		return EXIT_FAILURE;
+	}
+
+	// open file for sending
 	int fd = open(sendingfile_path, O_RDONLY);
 	if(fd == -1){
 		logMsg(__func__, __LINE__, ERROR, "Cant open %s file.", sendingfile_path);
 		return EXIT_FAILURE;
 	}
-
-	// get file stats info
-	if ((fstat(fd, &fileStatbuff) != 0) || (!S_ISREG(fileStatbuff.st_mode))) {
-		logMsg(__func__, __LINE__, ERROR, "Cant get file stats.");
-		close(fd);
-		return EXIT_FAILURE;
-	}
-	fileSize = fileStatbuff.st_size;
 
 	// init md5 hasher
 	md5_init(&ctx);
@@ -77,7 +74,7 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 	memset(fileInfoStruct.fileName, '\0', MAX_FILENAME_LEN * sizeof(char));
 	// TODO: add sizes cmp for cstrs
 	memcpy(fileInfoStruct.fileName, fileName_str, strlen(fileName_str) * sizeof(char));
-	fileInfoStruct.fileSize = fileSize;
+	fileInfoStruct.fileSize = _fileSize;
 
 	char* fileInfoMsg_ptr = NULL;
 	ssize_t fileInfoMsgSize = serialize_FileInfoMsg(fileInfoStruct, ';', &fileInfoMsg_ptr);
@@ -148,7 +145,7 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 
 		total_bytes_sended += bytes_sended;
 
-		_transfProgress = (total_bytes_sended * 100) / fileSize;
+		_transfProgress = (total_bytes_sended * 100) / _fileSize;
 		// TODO: create transfer progress output
 
 		bytes_sended = 0;
