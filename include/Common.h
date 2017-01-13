@@ -26,6 +26,7 @@
 #include "../BuildConfig.h"
 #include "BasicConstants.h"
 #include "BasicTypes.h"
+#include "md5.h";
 
 #ifdef DEBUG
 void DEBUG_printlnStdoutMsg(const char* __func_name__, const int __line_number__, log_msg_type_t msg_type, const char* debug_msg);
@@ -37,5 +38,7 @@ void logMsg(const char* __func_name__, const int __line_number__, log_msg_type_t
 file_size_t getFileSize(const char* file_name);
 
 char* getFileNameFromPath(const char* file_path);
+
+int countFileHash_md5(const char* full_file_name, OUT_ARG BYTE* file_hash);
 
 #endif /* INCLUDE_COMMON_H_ */

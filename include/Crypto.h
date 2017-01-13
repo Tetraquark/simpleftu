@@ -22,21 +22,21 @@
  * Convert string in hexadecimal format into array of bytes.
  *
  * @param hexStr a pointer to string with hexadecimal format.
- * @param hexStrSize length of hexStr char array.
+ * @param hexStr_size length of hexStr char array.
  * @param out_byteArr a pointer to an BYTE array with allocated memory which size is hexStrSize / 2.
  * @return 0 if success; 1 is fail.
  */
-int fromHexStrToByteArr(const char* hexStr, int hexStrSize, BYTE* out_byteArr);
+int fromHexStrToByteArr(const char* hexStr, int hexStr_size, OUT_ARG BYTE* out_byteArr);
 
 /**
  * Convert array of bytes into string with hexadecimal format.
  *
  * @param byteArr a pointer to array of bytes.
- * @param byteArrSize length of byteArr array.
+ * @param byteArr_size length of byteArr array.
  * @param out_strArr a pointer to an char array with allocated memory which size is hexStrSize * 2.
  * @return 0 if success; 1 is fail.
  */
-int fromByteArrToHexStr(const BYTE* byteArr, int byteArrSize, char** out_strArr);
+int fromByteArrToHexStr(const BYTE* byteArr, int byteArr_size, OUT_ARG char** out_strArr);
 
 /**
  * Compare two md5 hashes with MD5_BLOCK_SIZE length.

@@ -8,14 +8,13 @@
 
 #include "../include/Crypto.h"
 
-int fromHexStrToByteArr(const char* hexStr, int hexStrSize, BYTE* out_byteArr){
+int fromHexStrToByteArr(const char* hexStr, int hexStr_size, OUT_ARG BYTE* out_byteArr){
 	if(out_byteArr == NULL || hexStr == NULL)
 		return EXIT_FAILURE;
 
-	//memset(out_byteArr, '\0', hexStrSize / 2 * sizeof(char));
 	const char* pos = hexStr;
 
-	for(int i = 0; i < hexStrSize; i++){
+	for(int i = 0; i < hexStr_size; i++){
 		sscanf(pos, "%2hhx", &out_byteArr[i]);
 		pos += 2;
 	}
@@ -23,11 +22,11 @@ int fromHexStrToByteArr(const char* hexStr, int hexStrSize, BYTE* out_byteArr){
 	return EXIT_SUCCESS;
 }
 
-int fromByteArrToHexStr(const BYTE* byteArr, int byteArrSize, char** out_strArr){
+int fromByteArrToHexStr(const BYTE* byteArr, int byteArr_size, OUT_ARG char** out_strArr){
 	if(out_strArr == NULL || out_strArr == NULL)
 		return EXIT_FAILURE;
 
-	for(int i = 0; i < byteArrSize; i++){
+	for(int i = 0; i < byteArr_size; i++){
 		sprintf(*out_strArr + i * 2, "%02x", byteArr[i]);
 	}
 

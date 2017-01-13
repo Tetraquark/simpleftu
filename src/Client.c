@@ -23,7 +23,6 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 
 	struct sockaddr_in tcpsocket_addr_strct;
 	int socketDescr = 0;
-	MD5_CTX ctx;
 
 	// get file size
 	file_size_t _fileSize = 0;
@@ -33,26 +32,14 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 		return EXIT_FAILURE;
 	}
 
-	// open file for sending
-	int fd = open(sendingfile_path, O_RDONLY);
-	if(fd == -1){
-		logMsg(__func__, __LINE__, ERROR, "Cant open %s file.", sendingfile_path);
-		return EXIT_FAILURE;
-	}
-
-	// init md5 hasher
-	md5_init(&ctx);
-
 	// init tcp socket
 	if(initTcpConnSocket(&tcpsocket_addr_strct, &socketDescr, serv_ip, serv_port)){
 		logMsg(__func__, __LINE__, ERROR, "Error creating TCP socket. Abort.");
-		close(fd);
 		return EXIT_FAILURE;
 	}
 
 	if(connect(socketDescr, (struct sockaddr *) &tcpsocket_addr_strct, sizeof(tcpsocket_addr_strct)) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error in connect to server.");
-		close(fd);
 		return EXIT_FAILURE;
 	}
 
@@ -60,61 +47,54 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 	logMsg(__func__, __LINE__, INFO, "Try to send password: %s", serv_pass);
 	if(send(socketDescr, serv_pass, MAX_PASS_LEN * sizeof(char), 0) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error in sending password to server. Abort connection.");
-		// Sending result message error
+
 		// TODO: free mem and close descriptors
 		close(socketDescr);
-		close(fd);
 		return EXIT_FAILURE;
 	}
 
-	// send file info
-	file_info_msg_t fileInfoStruct;
-	// get file name from path
+	// get the file name from the path
+	file_info_msg_t _fileInfoStruct;
 	char* _fileName_str = getFileNameFromPath(sendingfile_path);
-
 	if(_fileName_str != NULL){
-		memset(fileInfoStruct.fileName, '\0', MAX_FILENAME_LEN * sizeof(char));
+		memset(_fileInfoStruct.fileName, '\0', MAX_FILENAME_LEN * sizeof(char));
 		// TODO: add sizes cmp for cstrs
-		memcpy(fileInfoStruct.fileName, _fileName_str, strlen(_fileName_str) * sizeof(char));
-		fileInfoStruct.fileSize = _fileSize;
+		memcpy(_fileInfoStruct.fileName, _fileName_str, strlen(_fileName_str) * sizeof(char));
+		_fileInfoStruct.fileSize = _fileSize;
 		free(_fileName_str);
 	}
 	else{
 		logMsg(__func__, __LINE__, ERROR, "Error. Can't get name of file from input path string. Abort.");
+
 		// TODO: free mem and close descriptors
 		close(socketDescr);
-		close(fd);
 		return EXIT_FAILURE;
 	}
 
-	char* fileInfoMsg_ptr = NULL;
-	ssize_t fileInfoMsgSize = serialize_FileInfoMsg(fileInfoStruct, ';', &fileInfoMsg_ptr);
-
-	logMsg(__func__, __LINE__, INFO, "Try to send file info msg: %s", fileInfoMsg_ptr);
-
-	if(send(socketDescr, fileInfoMsg_ptr, fileInfoMsgSize, 0) < 0){
+	// send file info
+	char* _fileInfoMsg_ptr = NULL;
+	ssize_t _fileInfoMsgSize = serialize_FileInfoMsg(_fileInfoStruct, ';', &_fileInfoMsg_ptr);
+	logMsg(__func__, __LINE__, INFO, "Try to send file info msg: %s", _fileInfoMsg_ptr);
+	if(send(socketDescr, _fileInfoMsg_ptr, _fileInfoMsgSize, 0) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error in sending file info to server. Abort connection.");
-		// Sending result message error
+
 		// TODO: free mem and close descriptors
 		close(socketDescr);
-		close(fd);
-		free(fileInfoMsg_ptr);
+		free(_fileInfoMsg_ptr);
 		return EXIT_FAILURE;
 	}
-
-	free(fileInfoMsg_ptr);
-
-	file_size_t bytes_readed = 0;
-	char* fdBuff = (char*) malloc((SENDING_FILE_PACKET_SIZE) * sizeof(char));
-	memset(fdBuff, '\0', (SENDING_FILE_PACKET_SIZE) * sizeof(char));
-	while( ((bytes_readed = read(fd, fdBuff, SENDING_FILE_PACKET_SIZE * sizeof(char))) > 0) ){
-		md5_update(&ctx, fdBuff, bytes_readed);
-		memset(fdBuff, '\0', (SENDING_FILE_PACKET_SIZE) * sizeof(char));
-	}
+	free(_fileInfoMsg_ptr);
 
 	BYTE hashArr[MD5_BLOCK_SIZE];
 	memset(hashArr, '\0', MD5_BLOCK_SIZE * sizeof(BYTE));
-	md5_final(&ctx, hashArr);
+	// count the file md5 hash
+	if(countFileHash_md5(sendingfile_path, hashArr)){
+		logMsg(__func__, __LINE__, ERROR, "Error in sending file info to server. Abort connection.");
+
+		// TODO: free mem and close descriptors
+		close(socketDescr);
+		return EXIT_FAILURE;
+	}
 
 	char* hashArrStr = (char*) malloc((MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
 	memset(hashArrStr, '\0', (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
@@ -124,43 +104,49 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 	logMsg(__func__, __LINE__, INFO, "Send md5 hash: %s", hashArrStr);
 	if(send(socketDescr, hashArrStr, (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char), 0) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error in sending file md5 hash to server. Abort connection.");
-		// Sending result message error
+
 		// TODO: free mem and close descriptors
 		close(socketDescr);
-		close(fd);
 		free(hashArrStr);
 		return EXIT_FAILURE;
 	}
+	free(hashArrStr);
 
-	// read file data block, count md5 hash, send file data block
-	bytes_readed = 0;
-	file_size_t total_bytes_sended = 0;
-	file_size_t bytes_sended = 0;
+	// open file for sending
+	int fd = open(sendingfile_path, O_RDONLY);
+	if(fd == -1){
+		logMsg(__func__, __LINE__, ERROR, "Cant open %s file.", sendingfile_path);
+		return EXIT_FAILURE;
+	}
 
 	logMsg(__func__, __LINE__, INFO, "Start file transferring");
-
-	close(fd);
-	fd = open(sendingfile_path, O_RDONLY);
-
+	file_size_t total_bytes_sended = 0;
+	file_size_t bytes_sended = 0;
+	char* fd_buff = NULL;
+	file_size_t _bytes_readed = 0;
 	int _transfProgress = 0;
-	while( ((bytes_readed = read(fd, fdBuff, SENDING_FILE_PACKET_SIZE * sizeof(char))) > 0) ){
 
-		if( (bytes_sended = send(socketDescr, fdBuff, bytes_readed, 0)) < 0){
+	fd_buff = (char*) malloc((SENDING_FILE_PACKET_SIZE) * sizeof(char));
+	memset(fd_buff, '\0', (SENDING_FILE_PACKET_SIZE) * sizeof(char));
+
+	while( ((_bytes_readed = read(fd, fd_buff, SENDING_FILE_PACKET_SIZE * sizeof(char))) > 0) ){
+
+		if( (bytes_sended = send(socketDescr, fd_buff, _bytes_readed, 0)) < 0){
 			logMsg(__func__, __LINE__, ERROR, "Error in sending file data block to server. Abort connection.");
-			// Sending result message error
+
 			// TODO: free mem and close descriptors
 			close(socketDescr);
 			close(fd);
+			free(fd_buff);
 			return EXIT_FAILURE;
 		}
 
 		total_bytes_sended += bytes_sended;
-
 		_transfProgress = (total_bytes_sended * 100) / _fileSize;
 		// TODO: create transfer progress output
 
 		bytes_sended = 0;
-		memset(fdBuff, '\0', SENDING_FILE_PACKET_SIZE);
+		memset(fd_buff, '\0', SENDING_FILE_PACKET_SIZE);
 	}
 	logMsg(__func__, __LINE__, INFO, "Total send file bytes: %lld", total_bytes_sended);
 
@@ -168,7 +154,7 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 
 	shutdown(socketDescr, SHUT_WR);
 	//close(socketDescr);
-	free(hashArrStr);
+	free(fd_buff);
 	close(fd);
 	return EXIT_SUCCESS;
 }

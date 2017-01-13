@@ -80,7 +80,7 @@ char* getFileNameFromPath(const char* file_path){
 	char* _file_name_ptr = NULL;
 	char _path_sep_symbol;
 
-#ifdef __linux
+#ifdef __linux__
 	_path_sep_symbol = '/';
 #elif _WIN32
 	_path_sep_symbol = '\\';
@@ -96,4 +96,36 @@ char* getFileNameFromPath(const char* file_path){
 		_file_name_ptr = strdup(s + 1);
 	}
 	return _file_name_ptr;
+}
+
+/**
+ * TODO: make windows version
+ */
+int countFileHash_md5(const char* full_file_name, OUT_ARG BYTE* file_hash){
+	int fd = 0;
+	char* fd_buff = NULL;
+	file_size_t bytes_readed = 0;
+	MD5_CTX ctx;
+
+	// init md5 hasher
+	md5_init(&ctx);
+
+	// open file for sending
+	fd = open(full_file_name, O_RDONLY);
+	if(fd == -1){
+		return EXIT_FAILURE;
+	}
+
+	fd_buff = (char*) malloc((SENDING_FILE_PACKET_SIZE) * sizeof(char));
+	memset(fd_buff, '\0', (SENDING_FILE_PACKET_SIZE) * sizeof(char));
+
+	// read file bytes block and update md5 hash-counter
+	while( ((bytes_readed = read(fd, fd_buff, SENDING_FILE_PACKET_SIZE * sizeof(char))) > 0) ){
+		md5_update(&ctx, fd_buff, bytes_readed);
+		memset(fd_buff, '\0', (SENDING_FILE_PACKET_SIZE) * sizeof(char));
+	}
+
+	md5_final(&ctx, file_hash);
+
+	return EXIT_SUCCESS;
 }
