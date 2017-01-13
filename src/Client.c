@@ -43,7 +43,12 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 	// init md5 hasher
 	md5_init(&ctx);
 
-	initTcpConnSocket(&tcpsocket_addr_strct, &socketDescr, serv_ip, serv_port);
+	// init tcp socket
+	if(initTcpConnSocket(&tcpsocket_addr_strct, &socketDescr, serv_ip, serv_port)){
+		logMsg(__func__, __LINE__, ERROR, "Error creating TCP socket. Abort.");
+		close(fd);
+		return EXIT_FAILURE;
+	}
 
 	if(connect(socketDescr, (struct sockaddr *) &tcpsocket_addr_strct, sizeof(tcpsocket_addr_strct)) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error in connect to server.");
@@ -52,8 +57,6 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 	}
 
 	// send password
-	//char* passw = (char*) malloc(MAX_PASS_LEN + 1 * sizeof(char));
-	//memcpy(passw, DEBUG_PASSWORD, MAX_PASS_LEN + 1 * sizeof(char));
 	logMsg(__func__, __LINE__, INFO, "Try to send password: %s", serv_pass);
 	if(send(socketDescr, serv_pass, MAX_PASS_LEN * sizeof(char), 0) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error in sending password to server. Abort connection.");
@@ -64,17 +67,25 @@ int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_F
 		return EXIT_FAILURE;
 	}
 
-	//free(passw);
-
 	// send file info
 	file_info_msg_t fileInfoStruct;
-#ifdef __linux__
-	char* fileName_str = basename(sendingfile_path);
-#endif
-	memset(fileInfoStruct.fileName, '\0', MAX_FILENAME_LEN * sizeof(char));
-	// TODO: add sizes cmp for cstrs
-	memcpy(fileInfoStruct.fileName, fileName_str, strlen(fileName_str) * sizeof(char));
-	fileInfoStruct.fileSize = _fileSize;
+	// get file name from path
+	char* _fileName_str = getFileNameFromPath(sendingfile_path);
+
+	if(_fileName_str != NULL){
+		memset(fileInfoStruct.fileName, '\0', MAX_FILENAME_LEN * sizeof(char));
+		// TODO: add sizes cmp for cstrs
+		memcpy(fileInfoStruct.fileName, _fileName_str, strlen(_fileName_str) * sizeof(char));
+		fileInfoStruct.fileSize = _fileSize;
+		free(_fileName_str);
+	}
+	else{
+		logMsg(__func__, __LINE__, ERROR, "Error. Can't get name of file from input path string. Abort.");
+		// TODO: free mem and close descriptors
+		close(socketDescr);
+		close(fd);
+		return EXIT_FAILURE;
+	}
 
 	char* fileInfoMsg_ptr = NULL;
 	ssize_t fileInfoMsgSize = serialize_FileInfoMsg(fileInfoStruct, ';', &fileInfoMsg_ptr);

@@ -42,7 +42,7 @@ void logMsg(const char* __func_name__, const int __line_number__, log_msg_type_t
 #endif
 }
 
-file_size_t getFileSize(char* file_name){
+file_size_t getFileSize(const char* file_name){
 	file_size_t _file_size = 0;
 #ifdef __linux__
 	struct stat _fileStatbuff;
@@ -74,4 +74,26 @@ file_size_t getFileSize(char* file_name){
 
 #endif
 	return _file_size;
+}
+
+char* getFileNameFromPath(const char* file_path){
+	char* _file_name_ptr = NULL;
+	char _path_sep_symbol;
+
+#ifdef __linux
+	_path_sep_symbol = '/';
+#elif _WIN32
+	_path_sep_symbol = '\\';
+#else
+	_path_sep_symbol = '/';
+#endif
+
+	char *s = strrchr(file_path, _path_sep_symbol);
+	if(s == NULL){
+		_file_name_ptr = strdup(file_path);
+	}
+	else{
+		_file_name_ptr = strdup(s + 1);
+	}
+	return _file_name_ptr;
 }

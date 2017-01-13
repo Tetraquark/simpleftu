@@ -11,12 +11,15 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef __linux__
 // for getFileSize()
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 #elif _WIN32
 #endif
 
@@ -31,6 +34,8 @@ void DEBUG_printlnStdoutMsg(const char* __func_name__, const int __line_number__
 char* getStrMsgType(log_msg_type_t msg_type);
 void logMsg(const char* __func_name__, const int __line_number__, log_msg_type_t msg_type, const char *format, ...);
 
-file_size_t getFileSize(char* file_name);
+file_size_t getFileSize(const char* file_name);
+
+char* getFileNameFromPath(const char* file_path);
 
 #endif /* INCLUDE_COMMON_H_ */
