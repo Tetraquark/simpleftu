@@ -32,16 +32,10 @@ int runDaemonMode(){
 	return _rc;
 }
 
-int runClientMode(char* __serverAddr, int _serverPort, char* _filePath, char* _serverPass){
+int runClientMode(char* _serverAddr, int _serverPort, char* _filePath, char* _serverPass){
 	int _rc = EXIT_SUCCESS;
 
-#ifdef DEBUG
-	_rc = DEBUG_sendTestFile(__serverAddr, _serverPort, _filePath, _serverPass);
-	if(_rc)
-		logMsg(__func__, __LINE__, INFO, "Unsuccessful file transfer");
-	else
-		logMsg(__func__, __LINE__, INFO, "Successful file transfer");
-#endif
+	_rc = startClient(_serverAddr, _serverPort, _filePath, _serverPass);
 
 	return _rc;
 }
@@ -307,8 +301,12 @@ int main(int argc, char** argv){
 	else if(appMode == MODE_CLIENT){
 		logMsg(__func__, __LINE__, INFO, "Run Client mode. Connect to: %s:%d; Send file: %s", _serverAddr, serverPort, _sendFilePath);
 
-		_rc |= runClientMode(_serverAddr, DEFAULT_SERVER_PORT, _sendFilePath, _clientPass);
+		_rc |= runClientMode(_serverAddr, serverPort, _sendFilePath, _clientPass);
 
+		if(_rc)
+			logMsg(__func__, __LINE__, INFO, "Unsuccessful file transfer.");
+		else
+			logMsg(__func__, __LINE__, INFO, "Successful file transfer.");
 	}
 	else if(appMode == MODE_SERVER){
 		logMsg(__func__, __LINE__, INFO, "Run Server mode: ");

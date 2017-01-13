@@ -99,7 +99,7 @@ char* getFileNameFromPath(const char* file_path){
 }
 
 /**
- * TODO: make windows version
+ * TODO: make version for _WIN32
  */
 int countFileHash_md5(const char* full_file_name, OUT_ARG BYTE* file_hash){
 	int fd = 0;

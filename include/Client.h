@@ -26,12 +26,10 @@
 #include "md5.h"
 #include "Serializer.h"
 
-#ifdef DEBUG
-int DEBUG_sendTestFile(char* serv_ip, int serv_port, char sendingfile_path[MAX_FULL_FILE_PATH_LEN], char* serv_pass);
-#endif
+int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_FILE_PATH_LEN + 1], char* _serv_pass);
 
 int initTcpConnSocket(struct sockaddr_in* __tcpsocket_addr, int* __socket_desc, char* __server_addr, int __server_port);
 
-int sendFile();
+file_size_t sendFile(int _socket, const char* _full_file_name);
 
 #endif /* INCLUDE_CLIENT_H_ */
