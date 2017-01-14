@@ -121,35 +121,32 @@ void* startListenTCPSocket(void* threadData){
 void* startPeerThread(void* threadData){
 	logMsg(__func__, __LINE__, INFO, "Start peer pthread.");
 	serverSysInfo_t* connectInfo = (serverSysInfo_t*) threadData;
-	char* servPassword = connectInfo->conf->password;		// server password
+	char* serv_passw = connectInfo->conf->password;		// server password
 	char* servDownloadFolder = connectInfo->conf->storageFolderPath;
 	int inputConnectFd = connectInfo->socketFd;				// input connection FD
 	ssize_t inputMsgSize = 0;
 
-	// get input password
-	char* inputPassBuff = (char*) malloc((MAX_PASS_LEN + 1) * sizeof(char));
-	memset(inputPassBuff, 0, (MAX_PASS_LEN + 1) * sizeof(char));
-	if((inputMsgSize = recvfrom(inputConnectFd, inputPassBuff, MAX_PASS_LEN * sizeof(char), 0, NULL, 0)) < 0){
-		logMsg(__func__, __LINE__, ERROR, "Peer password receiving error. Abort peer connection. %s", inputPassBuff);
-		// Receiving error
-		// TODO: free mem and close descriptors
-		return (void*) EXIT_FAILURE;
+	// get password from client
+	char* input_passw_buff = (char*) malloc((MAX_PASS_LEN + 1) * sizeof(char));
+	memset(input_passw_buff, 0, (MAX_PASS_LEN + 1) * sizeof(char));
+	if(recvData(inputConnectFd, (MAX_PASS_LEN + 1) * sizeof(char), &input_passw_buff) == -1){
+		logMsg(__func__, __LINE__, ERROR, "Peer password receiving error. Abort peer connection. %s", input_passw_buff);
+		free(input_passw_buff);
+		pthread_exit(NULL);
 	}
 
-	// check input password
-	bool_t isPassCorrect = checkPassword(servPassword, inputPassBuff);
-	logMsg(__func__, __LINE__, INFO, "Recv peer passwd: %s - %s", inputPassBuff, isPassCorrect == FALSE ? "wrong" : "correct");
+	// check input client password
+	bool_t is_passw_correct = checkPassword(serv_passw, input_passw_buff);
+	logMsg(__func__, __LINE__, INFO, "Received peer password: %s - %s",
+			input_passw_buff, is_passw_correct == FALSE ? "wrong" : "correct");
 
-	if(isPassCorrect == FALSE){
+	if(is_passw_correct == FALSE){
 		// if wrong password - close connection and close pthread
-		// TODO: free mem and close descriptors
 		close(inputConnectFd);
-		free(inputPassBuff);
-		return (void*) EXIT_FAILURE;
+		free(input_passw_buff);
+		pthread_exit(NULL);
 	}
-	else{
-		free(inputPassBuff);
-	}
+	free(input_passw_buff);
 
 	inputMsgSize = 0;
 
@@ -164,7 +161,7 @@ void* startPeerThread(void* threadData){
 		// Receiving error
 		// TODO: free mem and close descriptors
 		free(fileInfoMsgBuff);
-		return (void*) EXIT_FAILURE;
+		pthread_exit(NULL);
 	}
 
 	// deserialize input file info message
@@ -173,7 +170,7 @@ void* startPeerThread(void* threadData){
 		// Deserialize error
 		// TODO: free mem and close descriptors
 		free(fileInfoMsgBuff);
-		return (void*) EXIT_FAILURE;
+		pthread_exit(NULL);
 	}
 
 	logMsg(__func__, __LINE__, INFO, "Received file info msg of peer. Filesize %lld; Filename: %s",
@@ -195,7 +192,7 @@ void* startPeerThread(void* threadData){
 		logMsg(__func__, __LINE__, ERROR, "Can't create local tmp file. Abort peer connection.");
 		// Local file opening error
 		// TODO: free mem and close descriptors
-		return (void*) EXIT_FAILURE;
+		pthread_exit(NULL);
 	}
 
 	// init MD5 hash checker
@@ -215,7 +212,7 @@ void* startPeerThread(void* threadData){
 		logMsg(__func__, __LINE__, ERROR, "Peer file md5 hash message receiving error. Abort peer connection.");
 		// Receiving error
 		// TODO: free mem and close descriptors
-		return (void*) EXIT_FAILURE;
+		pthread_exit(NULL);
 	}
 
 	logMsg(__func__, __LINE__, INFO, "Received hash:\t %s", peerFileMd5HashStr);
@@ -238,7 +235,7 @@ void* startPeerThread(void* threadData){
 			logMsg(__func__, __LINE__, ERROR, "Error in write receiving file data into local file. Abort peer connection.");
 			// File writing error
 			// TODO: free mem and close descriptors
-			return (void*) EXIT_FAILURE;
+			pthread_exit(NULL);
 		}
 
 		if(recvTotalBytes >= fullRemainFileSize)
@@ -295,9 +292,19 @@ void* startPeerThread(void* threadData){
 	free(fileInfoMsgBuff);
 	free(recvFileLocalFullPath);
 	free(inputMsgBuff);
-	return EXIT_SUCCESS;
+
+	pthread_exit(NULL);
 }
 
+ssize_t recvData(int _socked_fd, size_t _recv_data_size, OUT_ARG char** _recv_buff){
+	ssize_t input_data_size = 0;
+
+	if((input_data_size = recvfrom(_socked_fd, *_recv_buff, _recv_data_size, 0, NULL, 0)) < 0){
+		input_data_size = -1;
+	}
+
+	return input_data_size;
+}
 
 /**
  * Compare two char arrays with passwords.

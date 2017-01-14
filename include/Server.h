@@ -38,4 +38,6 @@ int createServTCPSocket(struct sockaddr_in* _tcpsocket_addr, int* _socket_desc, 
 // stopgap measure
 bool_t checkPassword(const char* servPassStr, const char* inputPassStr);
 
+ssize_t recvData(int _socked_fd, size_t _recv_data_size, OUT_ARG char** _recv_buff);
+
 #endif /* INCLUDE_SERVER_H_ */
