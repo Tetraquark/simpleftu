@@ -30,6 +30,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	}
 
 	// connect to server
+	logMsg(__func__, __LINE__, INFO, "Try to connect to server: %s", _serv_ip);
 	if(connect(socketDescr, (struct sockaddr *) &tcpsocket_addr_strct, sizeof(tcpsocket_addr_strct)) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error in connect to server.");
 		return EXIT_FAILURE;
@@ -46,6 +47,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	}
 
 	// get the file size
+	logMsg(__func__, __LINE__, INFO, "Count sending file size.");
 	file_size_t file_size = 0;
 	file_size = getFileSize(_sendingfile_path);
 	if(file_size == -1){
@@ -86,6 +88,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	free(fileinfo_msg_str);
 
 	// count the file md5 hash
+	logMsg(__func__, __LINE__, INFO, "Count sending file md5 hash.");
 	BYTE hashArr[MD5_BLOCK_SIZE];
 	memset(hashArr, '\0', MD5_BLOCK_SIZE * sizeof(BYTE));
 	if(countFileHash_md5(_sendingfile_path, hashArr)){
@@ -100,7 +103,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	char* hashArr_str = (char*) malloc((MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
 	memset(hashArr_str, '\0', (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
 	fromByteArrToHexStr(hashArr, MD5_BLOCK_SIZE, &hashArr_str);
-	logMsg(__func__, __LINE__, INFO, "Send md5 hash: %s", hashArr_str);
+	logMsg(__func__, __LINE__, INFO, "Try to send the file md5 hash: %s", hashArr_str);
 	if(send(socketDescr, hashArr_str, (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char), 0) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error in sending file md5 hash to server. Abort connection.");
 
@@ -112,7 +115,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	free(hashArr_str);
 
 	// send the file
-	logMsg(__func__, __LINE__, INFO, "Start file transferring");
+	logMsg(__func__, __LINE__, INFO, "Start file transferring.");
 	file_size_t bytes_sended = sendFile(socketDescr, _sendingfile_path);
 	if(bytes_sended == -1){
 		logMsg(__func__, __LINE__, ERROR, "Error in sending file. Exit.");

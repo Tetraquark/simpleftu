@@ -109,6 +109,66 @@ void* startListenTCPSocket(void* threadData){
 	pthread_exit((void*) EXIT_SUCCESS);
 }
 
+static file_size_t __recvAndSaveFile(int _socket_fd, char* _tmp_file_fullpath, file_size_t full_remain_fileSize,
+		OUT_ARG BYTE _counted_tmpfile_hash_md5[MD5_BLOCK_SIZE]){
+	file_size_t recv_total_data_size = 0;
+	int tmp_file_fd = 0;
+	MD5_CTX ctx;
+	ssize_t recv_packet_size = 0;
+	char* input_dataBuff = NULL;
+
+	input_dataBuff = (char*) malloc(SENDING_FILE_PACKET_SIZE * sizeof(char));
+	memset(input_dataBuff, '\0', SENDING_FILE_PACKET_SIZE * sizeof(char));
+
+	// open new file to write mode
+	logMsg(__func__, __LINE__, INFO, "Try to open tmp file in storage: %s", _tmp_file_fullpath);
+
+	tmp_file_fd = open(_tmp_file_fullpath, O_CREAT | O_WRONLY, S_IRUSR | S_IRGRP | S_IROTH);
+	if(tmp_file_fd == -1){
+		logMsg(__func__, __LINE__, ERROR,
+				"Can't create local tmp file for saving. Abort peer connection.");
+		free(input_dataBuff);
+		return -1;
+	}
+
+	// init MD5 hash checker
+	md5_init(&ctx);
+
+	// recv file
+	while( (recv_packet_size = recvfrom(_socket_fd, input_dataBuff, SENDING_FILE_PACKET_SIZE * sizeof(char), 0, NULL, 0)) > 0){
+		recv_total_data_size += recv_packet_size;
+
+		// update MD5 hash checker
+		md5_update(&ctx, input_dataBuff, recv_packet_size);
+
+		// write input data into local file
+		if(write(tmp_file_fd, input_dataBuff, recv_packet_size) < 0){
+			logMsg(__func__, __LINE__, ERROR,
+					"Error in write receiving file data into local file. Abort peer connection.");
+			// File writing error
+			recv_total_data_size = -1;
+			break;
+		}
+
+		if(recv_total_data_size >= full_remain_fileSize){
+			//recv_total_data_size = -1; ??
+			break;
+		}
+
+		recv_packet_size = 0;
+		memset(input_dataBuff, '\0', SENDING_FILE_PACKET_SIZE * sizeof(char));
+	}
+
+	// count final hash for downloaded file
+	md5_final(&ctx, _counted_tmpfile_hash_md5);
+
+	fsync(tmp_file_fd);
+
+	free(input_dataBuff);
+	close(tmp_file_fd);
+	return recv_total_data_size;
+}
+
 /**
  * Input client (peer) pthread function.
  * Protocol:
@@ -122,7 +182,7 @@ void* startPeerThread(void* threadData){
 	logMsg(__func__, __LINE__, INFO, "Start peer pthread.");
 	serverSysInfo_t* connectInfo = (serverSysInfo_t*) threadData;
 	char* serv_passw = connectInfo->conf->password;		// server password
-	char* servDownloadFolder = connectInfo->conf->storageFolderPath;
+	char* serv_storage_dir_path = connectInfo->conf->storageFolderPath;
 	int inputConnectFd = connectInfo->socketFd;				// input connection FD
 	ssize_t inputMsgSize = 0;
 
@@ -151,113 +211,86 @@ void* startPeerThread(void* threadData){
 	inputMsgSize = 0;
 
 	// get file info struct
-	file_info_msg_t recvInputFileInfo;
-	size_t inputMsgBuffSize = sizeof(char) * MAX_FILESIZE_CHAR_NUM + sizeof(char) * MAX_FILENAME_LEN + 1;
-	char* fileInfoMsgBuff = (char*) malloc(inputMsgBuffSize);
-	memset(fileInfoMsgBuff, 0, inputMsgBuffSize);
+	file_info_msg_t recv_fileInfo_strc;
+	size_t input_msg_buffSize = sizeof(char) * MAX_FILESIZE_CHAR_NUM +
+			sizeof(char) * MAX_FILENAME_LEN + 1;
+	char* fileInfo_msgBuff = (char*) malloc(input_msg_buffSize);
+	memset(fileInfo_msgBuff, '\0', input_msg_buffSize);
 
-	if((inputMsgSize = recvfrom(inputConnectFd, fileInfoMsgBuff, inputMsgBuffSize, 0, NULL, 0)) < 0){
-		logMsg(__func__, __LINE__, ERROR, "Peer file info message receiving error. Abort peer connection.");
-		// Receiving error
-		// TODO: free mem and close descriptors
-		free(fileInfoMsgBuff);
+	if(recvData(inputConnectFd, input_msg_buffSize, &fileInfo_msgBuff) == -1){
+		logMsg(__func__, __LINE__, ERROR,
+				"Peer file info message receiving error. Abort peer connection.");
+		close(inputConnectFd);
+		free(fileInfo_msgBuff);
 		pthread_exit(NULL);
 	}
 
 	// deserialize input file info message
-	if(deserialize_FileInfoMsg(&recvInputFileInfo, fileInfoMsgBuff, ';')){
-		logMsg(__func__, __LINE__, ERROR, "Deserialize input file info message error. Abort peer connection.");
-		// Deserialize error
-		// TODO: free mem and close descriptors
-		free(fileInfoMsgBuff);
+	if(deserialize_FileInfoMsg(&recv_fileInfo_strc, fileInfo_msgBuff, ';')){
+		logMsg(__func__, __LINE__, ERROR,
+				"Deserialize input file info message error. Abort peer connection.");
+		close(inputConnectFd);
+		free(fileInfo_msgBuff);
 		pthread_exit(NULL);
 	}
+	free(fileInfo_msgBuff);
 
 	logMsg(__func__, __LINE__, INFO, "Received file info msg of peer. Filesize %lld; Filename: %s",
-			recvInputFileInfo.fileSize, recvInputFileInfo.fileName);
+			recv_fileInfo_strc.fileSize, recv_fileInfo_strc.fileName);
 
-	// builds full file path
-	size_t recvFuleFullPathSize = strlen(servDownloadFolder) * sizeof(char) + strlen(recvInputFileInfo.fileName) * sizeof(char) + 1;
-	char* recvFileLocalFullPath = (char*) malloc(recvFuleFullPathSize);
-	memset(recvFileLocalFullPath, 0, recvFuleFullPathSize);
-	strncpy(recvFileLocalFullPath, servDownloadFolder, strlen(servDownloadFolder) * sizeof(char));
-	strncpy(&recvFileLocalFullPath[strlen(servDownloadFolder)], recvInputFileInfo.fileName, strlen(recvInputFileInfo.fileName) * sizeof(char));
+	// builds full tmp file path
+	size_t tmp_file_fullpath_size = strlen(serv_storage_dir_path) * sizeof(char)
+			+ strlen(recv_fileInfo_strc.fileName) * sizeof(char) + 1;
+	char* tmp_file_fullpath_str = (char*) malloc(tmp_file_fullpath_size);
+	memset(tmp_file_fullpath_str, '\0', tmp_file_fullpath_size);
 
-	// open new file to write mode
-	logMsg(__func__, __LINE__, INFO, "Try to open tmp file in storage: %s", recvFileLocalFullPath);
-#ifdef __linux__
-	int localFileDescr = open(recvFileLocalFullPath, O_CREAT | O_WRONLY, S_IRUSR | S_IRGRP | S_IROTH);
-#endif
-	if(localFileDescr == -1){
-		logMsg(__func__, __LINE__, ERROR, "Can't create local tmp file. Abort peer connection.");
-		// Local file opening error
-		// TODO: free mem and close descriptors
-		pthread_exit(NULL);
-	}
-
-	// init MD5 hash checker
-	MD5_CTX ctx;
-	BYTE downloadedFileHash_md5[MD5_BLOCK_SIZE];
-	memset(downloadedFileHash_md5, '\0', MD5_BLOCK_SIZE);
-	md5_init(&ctx);
+	// copy storage dir path to tmp file path
+	strncpy(tmp_file_fullpath_str, serv_storage_dir_path,
+			strlen(serv_storage_dir_path) * sizeof(char));
+	// copy input file name to tmp file path
+	strncpy(&tmp_file_fullpath_str[strlen(serv_storage_dir_path)],
+			recv_fileInfo_strc.fileName, strlen(recv_fileInfo_strc.fileName) * sizeof(char));
 
 	inputMsgSize = 0;
 
 	// get file md5 hash from peer
-	BYTE peerFileMd5Hash[MD5_BLOCK_SIZE];
-	memset(peerFileMd5Hash, '\0', MD5_BLOCK_SIZE * sizeof(BYTE));
-	char* peerFileMd5HashStr = (char*) malloc((MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
-	memset(peerFileMd5HashStr, '\0', (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
-	if((inputMsgSize = recvfrom(inputConnectFd, peerFileMd5HashStr, (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char), 0, NULL, 0)) < 0){
-		logMsg(__func__, __LINE__, ERROR, "Peer file md5 hash message receiving error. Abort peer connection.");
-		// Receiving error
-		// TODO: free mem and close descriptors
+	BYTE peer_fileHash_md5[MD5_BLOCK_SIZE];
+	memset(peer_fileHash_md5, '\0', MD5_BLOCK_SIZE * sizeof(BYTE));
+	char* peer_fileHash_md5_str = (char*) malloc((MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
+	memset(peer_fileHash_md5_str, '\0', (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
+	if(recvData(inputConnectFd, (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char), &peer_fileHash_md5_str) == -1){
+		logMsg(__func__, __LINE__, ERROR,
+				"Peer file md5 hash message receiving error. Abort peer connection.");
+		close(inputConnectFd);
+		free(peer_fileHash_md5_str);
 		pthread_exit(NULL);
 	}
+	fromHexStrToByteArr(peer_fileHash_md5_str, MD5_BLOCK_SIZE * 2, peer_fileHash_md5);
+	logMsg(__func__, __LINE__, INFO, "Received hash:\t %s", peer_fileHash_md5_str);
+	free(peer_fileHash_md5_str);
 
-	logMsg(__func__, __LINE__, INFO, "Received hash:\t %s", peerFileMd5HashStr);
 	logMsg(__func__, __LINE__, INFO, "Start file transferring");
+	BYTE tmp_fileHash_md5[MD5_BLOCK_SIZE];
+	memset(tmp_fileHash_md5, '\0', MD5_BLOCK_SIZE);
 
 	// recv file
 	file_size_t recvTotalBytes = 0;
-	file_size_t fullRemainFileSize = recvInputFileInfo.fileSize;
-	char* inputMsgBuff = (char*) malloc(SENDING_FILE_PACKET_SIZE * sizeof(char));
-	memset(inputMsgBuff, '\0', SENDING_FILE_PACKET_SIZE * sizeof(char));
-	inputMsgSize = 0;
-	memset(inputMsgBuff, '\0', SENDING_FILE_PACKET_SIZE * sizeof(char));
-	while( (inputMsgSize = recvfrom(inputConnectFd, inputMsgBuff, SENDING_FILE_PACKET_SIZE * sizeof(char), 0, NULL, 0)) > 0){
-		// update MD5 hash checker
-		recvTotalBytes += inputMsgSize;
-		md5_update(&ctx, inputMsgBuff, inputMsgSize);
-
-		// write input data into local file
-		if(write(localFileDescr, inputMsgBuff, inputMsgSize) < 0){
-			logMsg(__func__, __LINE__, ERROR, "Error in write receiving file data into local file. Abort peer connection.");
-			// File writing error
-			// TODO: free mem and close descriptors
-			pthread_exit(NULL);
-		}
-
-		if(recvTotalBytes >= fullRemainFileSize)
-			break;
-
-		inputMsgSize = 0;
-		memset(inputMsgBuff, '\0', SENDING_FILE_PACKET_SIZE * sizeof(char));
+	recvTotalBytes = __recvAndSaveFile(inputConnectFd, tmp_file_fullpath_str, recv_fileInfo_strc.fileSize, tmp_fileHash_md5);
+	if(recvTotalBytes == -1){
+		logMsg(__func__, __LINE__, ERROR, "Error file transferring. Abort.");
+		close(inputConnectFd);
+		pthread_exit(NULL);
 	}
 
-	// count final hash for downloaded file
-	md5_final(&ctx, downloadedFileHash_md5);
-
-	// convert input md5 hash to byte format
-	char* downloadedHash = (char*) malloc((MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
-	memset(downloadedHash, '\0', (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
-	fromByteArrToHexStr(downloadedFileHash_md5, MD5_BLOCK_SIZE, &downloadedHash);
-	logMsg(__func__, __LINE__, INFO, "Counted hash:\t %s", downloadedHash);
-	fromHexStrToByteArr(peerFileMd5HashStr, MD5_BLOCK_SIZE * 2, peerFileMd5Hash);
+	// convert counted tmp file md5 hash to byte format
+	char* tmp_fileHash_md5_str = (char*) malloc((MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
+	memset(tmp_fileHash_md5_str, '\0', (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
+	fromByteArrToHexStr(tmp_fileHash_md5, MD5_BLOCK_SIZE, &tmp_fileHash_md5_str);
+	logMsg(__func__, __LINE__, INFO, "Counted hash:\t %s", tmp_fileHash_md5_str);
 
 	netmsg_sending_res_t fileTransferRes;
 	// compare received hash and counted hash of downloaded file
-	if(cmpHash_md5(peerFileMd5Hash, downloadedFileHash_md5)){
+	if(cmpHash_md5(peer_fileHash_md5, tmp_fileHash_md5)){
 		logMsg(__func__, __LINE__, INFO, "The md5 files hashes are different. Abort peer connection.");
 		// hashes are different - error
 		fileTransferRes = FAIL;
@@ -269,7 +302,6 @@ void* startPeerThread(void* threadData){
 		// hashes are same
 		fileTransferRes = SUCCESSFUL;
 		// sync downloaded file
-		fsync(localFileDescr);
 	}
 
 	logMsg(__func__, __LINE__, INFO, "Transfer is %s. Close connection.",
@@ -286,12 +318,7 @@ void* startPeerThread(void* threadData){
 
 	// close pthread
 	close(inputConnectFd);
-	close(localFileDescr);
-	free(peerFileMd5HashStr);
-	free(downloadedHash);
-	free(fileInfoMsgBuff);
-	free(recvFileLocalFullPath);
-	free(inputMsgBuff);
+	free(tmp_fileHash_md5_str);
 
 	pthread_exit(NULL);
 }
