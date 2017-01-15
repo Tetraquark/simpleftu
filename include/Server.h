@@ -9,15 +9,20 @@
 #ifndef INCLUDE_SERVER_H_
 #define INCLUDE_SERVER_H_
 
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <pthread.h>
 #include <string.h>
 #include <fcntl.h>
+
+#ifdef __linux__
 #include <sys/stat.h>
+#include <pthread.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#elif _WIN32
+
+#endif
 
 #include "../BuildConfig.h"
 #include "BasicTypes.h"

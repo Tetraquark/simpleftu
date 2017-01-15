@@ -60,14 +60,26 @@ file_size_t getFileSize(const char* file_name){
 		close(fd);
 	}
 #elif _WIN32
+	HANDLE hFile;
+	hFile = CreateFile(TEXT(file_name), GENERIC_READ, 0, NULL, OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
 
+	if(hFile == INVALID_HANDLE_VALUE){
+		_file_size = -1;
+	}
+	else{
+		LARGE_INTEGER u_winFsz;
+		GetFileSizeEx(hFile, &u_winFsz);
+		CloseHandle(hFile);
+		_file_size = u_winFsz.QuadPart;
+	}
 #else
-	FILE* fd = fopen(file_name, "r");
+	FILE* fd = fopen(file_name, "rb");
 	if(fd == NULL){
 		_file_size = -1;
 	}
 	else{
-		while(getc(fd) != EOF)
+		while(fgetc(fd) != -1)
 			_file_size++;
 		fclose(fd);
 	}

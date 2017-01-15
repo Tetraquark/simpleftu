@@ -15,12 +15,13 @@
 #include <string.h>
 
 #ifdef __linux__
-// for getFileSize()
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #elif _WIN32
+#include <windows.h>
+#include <inttypes.h>
 #endif
 
 #include "../BuildConfig.h"

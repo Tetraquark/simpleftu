@@ -56,7 +56,13 @@
  * Maximum password length in char symbols;
  */
 #define MAX_PASS_LEN 8
-#define MAX_FILENAME_LEN 128
+
+#ifdef FILENAME_MAX
+#define MAX_FILENAME_LEN FILENAME_MAX
+#else
+#define MAX_FILENAME_LEN 260
+#endif
+
 #define MAX_FULL_FILE_PATH_LEN MAX_FILENAME_LEN + 128
 
 #define MAX_STORAGEDIR_PATH_LEN MAX_FULL_FILE_PATH_LEN + MAX_FILENAME_LEN
