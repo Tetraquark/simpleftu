@@ -21,7 +21,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #elif _WIN32
-
+#include <windows.h>
+#include <winsock.h>
 #endif
 
 #include "../BuildConfig.h"

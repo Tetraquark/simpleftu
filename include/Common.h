@@ -13,12 +13,13 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #ifdef __linux__
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 #elif _WIN32
 #include <windows.h>
 #include <inttypes.h>
@@ -41,5 +42,13 @@ file_size_t getFileSize(const char* file_name);
 char* getFileNameFromPath(const char* file_path);
 
 int countFileHash_md5(const char* full_file_name, OUT_ARG BYTE* file_hash);
+
+int closeSocket(socket_t _socket_d);
+void exitThread(thread_rc_t _exit_arg);
+
+/**
+ * Infinite wait the thread.
+ */
+void joinThread_inf(thread_t _thread_d);
 
 #endif /* INCLUDE_COMMON_H_ */

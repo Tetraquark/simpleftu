@@ -12,11 +12,14 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-#include <wait.h>
-#include <execinfo.h>
 
 #include <sys/stat.h>
 #include <sys/file.h>
+
+#ifdef __linux__
+#include <wait.h>
+#include <execinfo.h>
+#endif
 
 #include "../BuildConfig.h"
 #include "../include/BasicTypes.h"

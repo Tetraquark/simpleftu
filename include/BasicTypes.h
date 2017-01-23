@@ -17,6 +17,33 @@
 
 typedef int64_t file_size_t;
 
+#ifdef _WIN32
+typedef SOCKET socket_t;
+#elif __linux__
+typedef int socket_t;
+#else
+#endif
+
+/**
+ * Type for threads descriptors.
+ */
+#ifdef _WIN32
+typedef HANDLE thread_t;
+#elif __linux__
+typedef pthread_t thread_t;
+#else
+#endif
+
+/**
+ * Type for return value from threads.
+ */
+#ifdef _WIN32
+typedef DWORD thread_rc_t;
+#elif __linux__
+typedef void* thread_rc_t;
+#else
+#endif
+
 enum __bool{
 	FALSE = 0,
 	TRUE
@@ -65,7 +92,7 @@ struct __serverConfig{
 typedef struct __serverConfig serverConfig_t;
 
 struct __serverSysInfo{
-	int socketFd;
+	socket_t socketFd;
 	int inputCommsPipeFd;
 	serverConfig_t* conf;
 };

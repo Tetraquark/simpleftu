@@ -141,3 +141,31 @@ int countFileHash_md5(const char* full_file_name, OUT_ARG BYTE* file_hash){
 
 	return EXIT_SUCCESS;
 }
+
+int closeSocket(socket_t _socket_d){
+	int rc = EXIT_FAILURE;
+#ifdef _WIN32
+	rc = closesocket(_socket_d);
+#elif __linux__
+	rc = close(socket_t);
+#else
+#endif
+	return rc;
+}
+
+void exitThread(thread_rc_t _exit_arg){
+#ifdef _WIN32
+	ExitThread(_exit_arg);
+#elif __linux__
+	pthread_exit(_exit_arg);
+#else
+#endif
+}
+
+void joinThread_inf(thread_t _thread_d){
+#ifdef _WIN32
+		WaitForSingleObject(_thread_d, INFINITE);
+#elif __linux__
+		pthread_join(_thread_d, NULL);
+#endif
+}

@@ -12,11 +12,12 @@ int startServTCPListener(serverConfig_t* serverConf_ptr){
 	logMsg(__func__, __LINE__, INFO, "Start server TCP Listener.");
 
 	struct sockaddr_in tcpSockaddr;
-	int socketFd = 0;
+	socket_t socketFd = 0;
 	int listenPort = serverConf_ptr->port;
 	int sockCommPipes[2];
 	serverSysInfo_t serverThreadInfo;
-	pthread_t serverThread = 0;
+	thread_t serverThread = 0;
+	int thread_start_rc = 0;
 
 	if(pipe(sockCommPipes) == -1){
 		logMsg(__func__, __LINE__, ERROR, "Error in pipes opening. Abort.");
@@ -36,9 +37,18 @@ int startServTCPListener(serverConfig_t* serverConf_ptr){
 	serverThreadInfo.conf = serverConf_ptr;
 
 	// start server TCP listener pthread
-	if( pthread_create(&serverThread, NULL, startListenTCPSocket, (void*) &serverThreadInfo) ){
-		// pthread creating error
+#ifdef _WIN32
+	serverThread = CreateThread(NULL, 0, startListenTCPSocket, &serverThreadInfo, 0, NULL);
+	thread_start_rc = serverThread;
+#elif __linux__
+	thread_start_rc = pthread_create(&serverThread, NULL, startListenTCPSocket, (void*) &serverThreadInfo)
+#endif
+
+	if( thread_start_rc ){
+		// thread creating error
 		logMsg(__func__, __LINE__, ERROR, "Error in start \"startListenTCPSocket\" pthread. Abort.");
+
+		//TODO: close socket!
 
 		// close commands pipes
 		for(int i = 0; i < 2; i++)
@@ -50,8 +60,10 @@ int startServTCPListener(serverConfig_t* serverConf_ptr){
 		close(sockCommPipes[1]);
 
 		logMsg(__func__, __LINE__, INFO, "\"startListenTCPSocket\" pthread started successful. Join pthread.");
-		pthread_join(serverThread, NULL);
+		joinThread_inf(serverThread);
 	}
+
+	//TODO: close socket!
 
 	return EXIT_SUCCESS;
 }
@@ -76,12 +88,12 @@ void* startListenTCPSocket(void* threadData){
 
 		if(currCommAction == LISTEN){
 			struct sockaddr_in tcpInputClient_addr;
-			int inputClientFd = 0;
+			socket_t inputClientFd = 0;
 			socklen_t addrLen = sizeof(tcpInputClient_addr);
 			if ((inputClientFd = accept(serverInfo->socketFd, (struct sockaddr *)&tcpInputClient_addr, &addrLen)) < 0){
 				logMsg(__func__, __LINE__, ERROR, "Error in accepting input peer. RC: %d", inputClientFd);
-				close(serverInfo->socketFd);
-				pthread_exit((void*) EXIT_FAILURE);
+				closeSocket(serverInfo->socketFd);
+				exitThread(EXIT_FAILURE);
 			}
 
 			logMsg(__func__, __LINE__, INFO, "Accepted connection from: %s", inet_ntoa(tcpInputClient_addr.sin_addr));
@@ -96,7 +108,7 @@ void* startListenTCPSocket(void* threadData){
 
 				// close accepted socket
 				close(serverInfo->socketFd);
-				pthread_exit((void*) EXIT_FAILURE);
+				exitThread(EXIT_FAILURE);
 			}
 			else{
 				// if pthread creating was successful
@@ -105,8 +117,7 @@ void* startListenTCPSocket(void* threadData){
 		}
 	}
 
-
-	pthread_exit((void*) EXIT_SUCCESS);
+	exitThread(EXIT_SUCCESS);
 }
 
 static file_size_t __recvAndSaveFile(int _socket_fd, char* _tmp_file_fullpath, file_size_t full_remain_fileSize,
@@ -352,9 +363,16 @@ bool_t checkPassword(const char* servPassStr, const char* inputPassStr){
  * Create socket listener for _socket_desc descriptor and bind into _port.
  * @return 0 success; 1 error
  */
-int createServTCPSocket(struct sockaddr_in* _tcpsocket_addr, int* _socket_desc, int _port){
+int createServTCPSocket(struct sockaddr_in* _tcpsocket_addr, socket_t* _socket_desc, int _port){
 
-	if((*_socket_desc = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	*_socket_desc = socket(AF_INET, SOCK_STREAM, 0);
+
+#ifdef _WIN32
+	if(*_socket_desc == INVALID_SOCKET)
+#elif __linux
+	if(*_socket_desc < 0)
+#else
+#endif
 		return EXIT_FAILURE;
 
     memset(_tcpsocket_addr, 0, sizeof(*_tcpsocket_addr));
@@ -362,7 +380,7 @@ int createServTCPSocket(struct sockaddr_in* _tcpsocket_addr, int* _socket_desc, 
     (*_tcpsocket_addr).sin_addr.s_addr = htonl(INADDR_ANY);
     (*_tcpsocket_addr).sin_port        = htons(_port);
 
-    if( bind(*_socket_desc, (struct sockaddr *)_tcpsocket_addr, sizeof(*_tcpsocket_addr)) < 0 )
+    if( bind(*_socket_desc, (struct sockaddr *)_tcpsocket_addr, sizeof(*_tcpsocket_addr)) != 0 )
     	return EXIT_FAILURE;
 
     return EXIT_SUCCESS;
