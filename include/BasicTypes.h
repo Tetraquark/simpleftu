@@ -11,6 +11,10 @@
 
 #include <stdint.h>
 
+#ifdef __linux__
+#include <pthread.h>
+#endif
+
 #include "../BuildConfig.h"
 #include "md5.h"
 #include "BasicConstants.h"

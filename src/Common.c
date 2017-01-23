@@ -147,7 +147,7 @@ int closeSocket(socket_t _socket_d){
 #ifdef _WIN32
 	rc = closesocket(_socket_d);
 #elif __linux__
-	rc = close(socket_t);
+	rc = close(_socket_d);
 #else
 #endif
 	return rc;

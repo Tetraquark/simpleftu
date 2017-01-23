@@ -41,7 +41,7 @@ int startServTCPListener(serverConfig_t* serverConf_ptr){
 	serverThread = CreateThread(NULL, 0, startListenTCPSocket, &serverThreadInfo, 0, NULL);
 	thread_start_rc = serverThread;
 #elif __linux__
-	thread_start_rc = pthread_create(&serverThread, NULL, startListenTCPSocket, (void*) &serverThreadInfo)
+	thread_start_rc = pthread_create(&serverThread, NULL, startListenTCPSocket, (void*) &serverThreadInfo);
 #endif
 
 	if( thread_start_rc ){
