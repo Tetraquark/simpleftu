@@ -8,79 +8,79 @@
 
 #include "../include/Serializer.h"
 
-ssize_t serialize_FileInfoMsg(file_info_msg_t inStruct, const char delimSymbol, OUT_ARG char** out_fileInfoMsg){
-	int _fileNameStr_len = strlen(inStruct.fileName);
+ssize_t serialize_FileInfoMsg(file_info_msg_t _inStruct, const char _delimSymbol, OUT_ARG char** _out_fileInfoMsg){
+	int fileNameStr_len = strlen(_inStruct.fileName);
 
-	if(_fileNameStr_len <= 0 || inStruct.fileSize <= 0)
+	if(fileNameStr_len <= 0 || _inStruct.fileSize <= 0)
 		return -1;
 
-	char _fileSizeMsgStr[MAX_FILESIZE_CHAR_NUM];
-	memset(_fileSizeMsgStr, 0, MAX_FILESIZE_CHAR_NUM);
+	char fileSizeMsgStr[MAX_FILESIZE_CHAR_NUM];
+	memset(fileSizeMsgStr, 0, MAX_FILESIZE_CHAR_NUM);
 #ifdef __linux__
-	sprintf(_fileSizeMsgStr, "%lld", inStruct.fileSize);
+	sprintf(fileSizeMsgStr, "%lld", _inStruct.fileSize);
 #endif
-	int _fileSizeStr_len = strlen(_fileSizeMsgStr);
+	int fileSizeStr_len = strlen(fileSizeMsgStr);
 
-	ssize_t _buffSize = sizeof(char) * MAX_FILESIZE_CHAR_NUM + sizeof(char) * MAX_FILENAME_LEN + 1;
-			//_fileNameStr_len * sizeof(char) +
-			//_fileSizeStr_len * sizeof(char) +
+	ssize_t buffSize = sizeof(char) * MAX_FILESIZE_CHAR_NUM + sizeof(char) * MAX_FILENAME_LEN + 1;
+			//fileNameStr_len * sizeof(char) +
+			//fileSizeStr_len * sizeof(char) +
 			//2 * sizeof(char) + 1;
 
-	char* _serializedMsg = (char*) malloc(_buffSize);
-	memset(_serializedMsg, '\0', _buffSize);
+	char* serializedMsg = (char*) malloc(buffSize);
+	memset(serializedMsg, '\0', buffSize);
 
 	// paste fileName field
-	strncpy(_serializedMsg, inStruct.fileName, _fileNameStr_len * sizeof(char));
+	strncpy(serializedMsg, _inStruct.fileName, fileNameStr_len * sizeof(char));
 	// paste delim symbol
-	strncpy(&_serializedMsg[_fileNameStr_len], &delimSymbol, sizeof(char));
+	strncpy(&serializedMsg[fileNameStr_len], &_delimSymbol, sizeof(char));
 	// paste fileSize field
-	strncpy(&_serializedMsg[_fileNameStr_len + 1], _fileSizeMsgStr, _fileSizeStr_len * sizeof(char));
-	//strncpy(&_serializedMsg[_fileNameStr_len + 1 + _fileSizeStr_len + 1], &delimSymbol, sizeof(char));
+	strncpy(&serializedMsg[fileNameStr_len + 1], fileSizeMsgStr, fileSizeStr_len * sizeof(char));
+	//strncpy(&serializedMsg[fileNameStr_len + 1 + fileSizeStr_len + 1], &_delimSymbol, sizeof(char));
 
-	*out_fileInfoMsg = _serializedMsg;
-	return _buffSize;
+	*_out_fileInfoMsg = serializedMsg;
+	return buffSize;
 }
 
-int deserialize_FileInfoMsg(OUT_ARG file_info_msg_t* outStruct, char* msgBuff, const char delimSymbol){
-	if(outStruct == NULL || msgBuff == NULL)
+int deserialize_FileInfoMsg(OUT_ARG file_info_msg_t* _outStruct, char* _msgBuff, const char _delimSymbol){
+	if(_outStruct == NULL || _msgBuff == NULL)
 		return EXIT_FAILURE;
 
 	// get fileName field
-	char* _pch = strtok(msgBuff, &delimSymbol);
-	if(_pch == NULL)
+	char* pch = strtok(_msgBuff, &_delimSymbol);
+	if(pch == NULL)
 		return EXIT_FAILURE;
-	strncpy(outStruct->fileName, _pch, strlen(_pch) * sizeof(char));
+	strncpy(_outStruct->fileName, pch, strlen(pch) * sizeof(char));
 
 	// get fileSize field
-	_pch = strtok(NULL, &delimSymbol);
-	if(_pch == NULL)
+	pch = strtok(NULL, &_delimSymbol);
+	if(pch == NULL)
 		return EXIT_FAILURE;
-	outStruct->fileSize = atoll(_pch);
+	_outStruct->fileSize = atoll(pch);
 
 	// get fileHash_md5 field
 	/*
-	_pch = strtok(msgBuff, &delimSymbol);
-	if(_pch == NULL)
+	pch = strtok(_msgBuff, &_delimSymbol);
+	if(pch == NULL)
 		return EXIT_FAILURE;
 	BYTE fileHash_md5_arr[MD5_BLOCK_SIZE];
 	memset(fileHash_md5_arr, 0, MD5_BLOCK_SIZE * sizeof(BYTE));
-	fromHexStrToByteArr(_pch, MD5_BLOCK_SIZE * 2, fileHash_md5_arr);
-	memcpy(outStruct->fileHash_md5, fileHash_md5_arr, MD5_BLOCK_SIZE * sizeof(BYTE));
+	fromHexStrToByteArr(pch, MD5_BLOCK_SIZE * 2, fileHash_md5_arr);
+	memcpy(_outStruct->fileHash_md5, fileHash_md5_arr, MD5_BLOCK_SIZE * sizeof(BYTE));
 	*/
 
 	return EXIT_SUCCESS;
 }
 
-int parse_ipaddrStrToParts(char* addr_str, OUT_ARG char** ip_str, OUT_ARG int* port){
-    char* _pch = strtok(addr_str, ":");
-    if(_pch == NULL)
+int parse_ipaddrStrToParts(char* _addr_str, OUT_ARG char** _ip_str, OUT_ARG int* _port){
+    char* pch = strtok(_addr_str, ":");
+    if(pch == NULL)
     	return EXIT_FAILURE;
-    strncpy(*ip_str, _pch, strlen(_pch) * sizeof(char));
+    strncpy(*_ip_str, pch, strlen(pch) * sizeof(char));
 
-    _pch = strtok(NULL, ":");
-    if(_pch == NULL)
+    pch = strtok(NULL, ":");
+    if(pch == NULL)
     	return EXIT_FAILURE;
-    (*port) = atoi(_pch);
+    (*_port) = atoi(pch);
 
 	return EXIT_SUCCESS;
 }

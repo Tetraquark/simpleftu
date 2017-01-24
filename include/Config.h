@@ -25,7 +25,7 @@
 #define SFTU_CONFIG_FIELDNAME_MAX_PEERS "max-connected-peers"
 #define SFTU_CONFIG_FIELDNAME_MAX_IN_FILESIZE "max-input-file-size"
 
-void config_free(serverConfig_t* serv_conf_ptr);
-int config_loadFromFile(char* conf_file_path, OUT_ARG serverConfig_t* serv_conf_ptr);
+int config_loadFromFile(char* _conf_file_path, OUT_ARG serverConfig_t* _serv_conf_ptr);
+void config_free(serverConfig_t* _serv_conf_ptr);
 
 #endif /* INCLUDE_CONFIG_H_ */

@@ -30,23 +30,23 @@
 #include "../include/Config.h"
 
 int runDaemonMode(){
-	int _rc = EXIT_SUCCESS;
+	int rc = EXIT_SUCCESS;
 
-	return _rc;
+	return rc;
 }
 
 int runClientMode(char* _serverAddr, int _serverPort, char* _filePath, char* _serverPass){
-	int _rc = EXIT_SUCCESS;
+	int rc = EXIT_SUCCESS;
 
-	_rc = startClient(_serverAddr, _serverPort, _filePath, _serverPass);
+	rc = startClient(_serverAddr, _serverPort, _filePath, _serverPass);
 
-	return _rc;
+	return rc;
 }
 
-int runServerMode(serverConfig_t* conf){
-	int _rc = EXIT_SUCCESS;
-	startServTCPListener(conf);
-	return _rc;
+int runServerMode(serverConfig_t* _conf){
+	int rc = EXIT_SUCCESS;
+	startServTCPListener(_conf);
+	return rc;
 }
 
 void getOpt_helpMsg(){
@@ -70,16 +70,16 @@ void getOpt_helpMsg(){
 }
 
 int main(int argc, char** argv){
-	int _rc = EXIT_SUCCESS;
+	int rc = EXIT_SUCCESS;
 
 	mode_type_t appMode = MODE_NONE;
-	char* _sendFilePath = NULL;
-	char* _serverAddr = NULL;
-	char* _clientPass = NULL;
+	char* sendFilePath = NULL;
+	char* serverAddr = NULL;
+	char* clientPass = NULL;
 	int serverPort = 0;
 
 	bool_t isLoadFromCfg = FALSE;
-	char* _confFilePath = NULL;
+	char* confFilePath = NULL;
 	serverConfig_t servConf_st;
 	servConf_st.port = -1;
 	servConf_st.password = NULL;
@@ -118,7 +118,7 @@ int main(int argc, char** argv){
 	option = getopt_long(argc, argv, short_options, long_options, &option_index);
 	if(option < 0){
 		printf("Error: mode not selected! Look -h help message. Exit.\n");
-		_rc = EXIT_FAILURE;
+		rc = EXIT_FAILURE;
 		goto __exit_1;
 	}
 
@@ -127,13 +127,13 @@ int main(int argc, char** argv){
 		case 'h':
 			getOpt_helpMsg();
 
-			_rc = EXIT_SUCCESS;
+			rc = EXIT_SUCCESS;
 			goto __exit_1;
 			break;
 		case 's':
 			if(appMode != MODE_NONE){
 				printf("Error - selected multiple modes. Select only one mode. Exit.\n");
-				_rc = EXIT_FAILURE;
+				rc = EXIT_FAILURE;
 				goto __exit_1;
 			}
 
@@ -142,7 +142,7 @@ int main(int argc, char** argv){
 		case 'd':
 			if(appMode != MODE_NONE){
 				printf("Error - selected multiple modes. Select only one mode. Exit.\n");
-				_rc = EXIT_FAILURE;
+				rc = EXIT_FAILURE;
 				goto __exit_1;
 			}
 
@@ -151,7 +151,7 @@ int main(int argc, char** argv){
 		case 'c':
 			if(appMode != MODE_NONE){
 				printf("Error - selected multiple modes. Select only one mode. Exit.\n");
-				_rc = EXIT_FAILURE;
+				rc = EXIT_FAILURE;
 				goto __exit_1;
 			}
 
@@ -160,63 +160,63 @@ int main(int argc, char** argv){
 		case 'f':
 			if(appMode != MODE_CLIENT){
 				printf("Error: -f option work only in client mode. Exit.\n");
-				_rc = EXIT_FAILURE;
+				rc = EXIT_FAILURE;
 				goto __exit_1;
 			}
-			_sendFilePath = (char*) malloc(MAX_FULL_FILE_PATH_LEN + 1 * sizeof(char));
-			memset(_sendFilePath, '\0', MAX_FULL_FILE_PATH_LEN + 1 * sizeof(char));
-			strncpy(_sendFilePath, optarg, strlen(optarg) * sizeof(char));
+			sendFilePath = (char*) malloc(MAX_FULL_FILE_PATH_LEN + 1 * sizeof(char));
+			memset(sendFilePath, '\0', MAX_FULL_FILE_PATH_LEN + 1 * sizeof(char));
+			strncpy(sendFilePath, optarg, strlen(optarg) * sizeof(char));
 			break;
 		case 'a':
 			if(appMode != MODE_CLIENT){
 				printf("Error: -a option work only in client mode. Exit.\n");
-				_rc = EXIT_FAILURE;
+				rc = EXIT_FAILURE;
 				goto __exit_1;
 			}
-			_serverAddr = (char*) malloc(IPADDR_STR_LEN + 1 * sizeof(char));
-			memset(_serverAddr, '\0', IPADDR_STR_LEN + 1 * sizeof(char));
-			if(parse_ipaddrStrToParts(optarg, &_serverAddr, &serverPort)){
+			serverAddr = (char*) malloc(IPADDR_STR_LEN + 1 * sizeof(char));
+			memset(serverAddr, '\0', IPADDR_STR_LEN + 1 * sizeof(char));
+			if(parse_ipaddrStrToParts(optarg, &serverAddr, &serverPort)){
 				logMsg(__func__, __LINE__, ERROR,
 						"Parsing server address error. Correct input string format: \"IP:PORT\"(127.0.0.1:10888). Exit.");
 
-				_rc = EXIT_FAILURE;
+				rc = EXIT_FAILURE;
 				goto __exit_1;
 			}
 			break;
 		case 'p':	// --cpass option
 			if(appMode != MODE_CLIENT){
 				printf("Error: -p option work only in client mode. Exit.\n");
-				_rc = EXIT_FAILURE;
+				rc = EXIT_FAILURE;
 				goto __exit_1;
 			}
-			_clientPass = (char*) malloc(MAX_PASS_LEN + 1 * sizeof(char));
-			memset(_clientPass, '\0', MAX_PASS_LEN + 1 * sizeof(char));
-			strncpy(_clientPass, optarg, strlen(optarg) * sizeof(char));
+			clientPass = (char*) malloc(MAX_PASS_LEN + 1 * sizeof(char));
+			memset(clientPass, '\0', MAX_PASS_LEN + 1 * sizeof(char));
+			strncpy(clientPass, optarg, strlen(optarg) * sizeof(char));
 			break;
 		case 'q':	// --conf option
 			if(appMode != MODE_SERVER && appMode != MODE_DAEMON){
 				logMsg(__func__, __LINE__, ERROR, "--conf option work only in server or daemon mode. Exit.");
-				_rc = EXIT_FAILURE;
+				rc = EXIT_FAILURE;
 				goto __exit_1;
 			}
 			if(optarg != NULL){
 				// load conf from optarg path
-				_confFilePath = (char*) malloc(MAX_STORAGEDIR_PATH_LEN + 1 * sizeof(char));
-				memset(_confFilePath, '\0', MAX_STORAGEDIR_PATH_LEN + 1 * sizeof(char));
-				strncpy(_confFilePath, optarg, strlen(optarg) * sizeof(char));
+				confFilePath = (char*) malloc(MAX_STORAGEDIR_PATH_LEN + 1 * sizeof(char));
+				memset(confFilePath, '\0', MAX_STORAGEDIR_PATH_LEN + 1 * sizeof(char));
+				strncpy(confFilePath, optarg, strlen(optarg) * sizeof(char));
 			}
 			else{
 				// load conf from default path
-				_confFilePath = (char*) malloc(strlen(DEFAULT_CONFFILE_NAME) + 1 * sizeof(char));
-				memset(_confFilePath, '\0', strlen(DEFAULT_CONFFILE_NAME) + 1 * sizeof(char));
-				strncpy(_confFilePath, DEFAULT_CONFFILE_NAME, strlen(DEFAULT_CONFFILE_NAME) * sizeof(char));
+				confFilePath = (char*) malloc(strlen(DEFAULT_CONFFILE_NAME) + 1 * sizeof(char));
+				memset(confFilePath, '\0', strlen(DEFAULT_CONFFILE_NAME) + 1 * sizeof(char));
+				strncpy(confFilePath, DEFAULT_CONFFILE_NAME, strlen(DEFAULT_CONFFILE_NAME) * sizeof(char));
 			}
 			isLoadFromCfg = TRUE;
 			break;
 		case 't':	// --port option
 			if(appMode != MODE_SERVER && appMode != MODE_DAEMON){
 				logMsg(__func__, __LINE__, ERROR, "--port option work only in server or daemon mode. Exit.");
-				_rc = EXIT_FAILURE;
+				rc = EXIT_FAILURE;
 				goto __exit_1;
 			}
 			servConf_st.port = atoi(optarg);
@@ -224,7 +224,7 @@ int main(int argc, char** argv){
 		case 'w':	// --pass option
 			if(appMode != MODE_SERVER && appMode != MODE_DAEMON){
 				logMsg(__func__, __LINE__, ERROR, "--spass option work only in server or daemon mode. Exit.");
-				_rc = EXIT_FAILURE;
+				rc = EXIT_FAILURE;
 				goto __exit_1;
 			}
 			servConf_st.password = (char*) malloc(MAX_PASS_LEN + 1 * sizeof(char));
@@ -234,7 +234,7 @@ int main(int argc, char** argv){
 		case 'b':	// --storage option
 			if(appMode != MODE_SERVER && appMode != MODE_DAEMON){
 				logMsg(__func__, __LINE__, ERROR, "--storage option work only in server or daemon mode. Exit.");
-				_rc = EXIT_FAILURE;
+				rc = EXIT_FAILURE;
 				goto __exit_1;
 			}
 			servConf_st.storageFolderPath = (char*) malloc(MAX_STORAGEDIR_PATH_LEN + 1 * sizeof(char));
@@ -249,29 +249,29 @@ int main(int argc, char** argv){
 	if(appMode == MODE_NONE){
 		logMsg(__func__, __LINE__, ERROR, "Forgot select program mode! Look -h help message. Exit.");
 
-		_rc = EXIT_FAILURE;
+		rc = EXIT_FAILURE;
 		goto __exit_1;
 	}
 
 	if(appMode == MODE_SERVER || appMode == MODE_DAEMON){
 		if(isLoadFromCfg == TRUE){
 			// Load server settings from config.
-			config_loadFromFile(_confFilePath, &servConf_st);
+			config_loadFromFile(confFilePath, &servConf_st);
 		}
 		else{
 			if(servConf_st.password == NULL || servConf_st.storageFolderPath == NULL
 					|| servConf_st.port == -1)
 			{
 				logMsg(__func__, __LINE__, ERROR, "Wrong server config. Restart program with correct params. Exit.");
-				_rc = EXIT_FAILURE;
+				rc = EXIT_FAILURE;
 				goto __exit_1;
 			}
 		}
 	}
 
-	if(appMode == MODE_CLIENT && (_sendFilePath == NULL || _serverAddr == NULL)){
+	if(appMode == MODE_CLIENT && (sendFilePath == NULL || serverAddr == NULL)){
 		printf("Was selected client mode but forgot set -f or -a argument! Look -h help message.\n");
-		_rc = EXIT_FAILURE;
+		rc = EXIT_FAILURE;
 		goto __exit_1;
 	}
 
@@ -279,7 +279,7 @@ int main(int argc, char** argv){
 		daemon_pid = fork();
 		if(daemon_pid == -1){
 			logMsg(__func__, __LINE__, ERROR, "Can't start daemon: %s", strerror(errno));
-			_rc = EXIT_FAILURE;
+			rc = EXIT_FAILURE;
 			goto __exit_1;
 		}
 		else if(daemon_pid == 0){
@@ -292,7 +292,7 @@ int main(int argc, char** argv){
 			close(STDOUT_FILENO);
 			close(STDERR_FILENO);
 
-			_rc |= runDaemonMode();
+			rc |= runDaemonMode();
 
 		}
 		else{
@@ -302,11 +302,11 @@ int main(int argc, char** argv){
 		}
 	}
 	else if(appMode == MODE_CLIENT){
-		logMsg(__func__, __LINE__, INFO, "Run Client mode. Connect to: %s:%d; Send file: %s", _serverAddr, serverPort, _sendFilePath);
+		logMsg(__func__, __LINE__, INFO, "Run Client mode. Connect to: %s:%d; Send file: %s", serverAddr, serverPort, sendFilePath);
 
-		_rc |= runClientMode(_serverAddr, serverPort, _sendFilePath, _clientPass);
+		rc |= runClientMode(serverAddr, serverPort, sendFilePath, clientPass);
 
-		if(_rc)
+		if(rc)
 			logMsg(__func__, __LINE__, INFO, "Unsuccessful file transfer.");
 		else
 			logMsg(__func__, __LINE__, INFO, "Successful file transfer.");
@@ -314,22 +314,22 @@ int main(int argc, char** argv){
 	else if(appMode == MODE_SERVER){
 		logMsg(__func__, __LINE__, INFO, "Run Server mode: ");
 
-		_rc |= runServerMode(&servConf_st);
+		rc |= runServerMode(&servConf_st);
 
 	}
 
 	__exit_1:
-	if(_sendFilePath != NULL)
-		free(_sendFilePath);
-	if(_serverAddr != NULL)
-		free(_serverAddr);
-	if(_clientPass != NULL)
-		free(_clientPass);
-	if(_confFilePath != NULL)
-		free(_confFilePath);
+	if(sendFilePath != NULL)
+		free(sendFilePath);
+	if(serverAddr != NULL)
+		free(serverAddr);
+	if(clientPass != NULL)
+		free(clientPass);
+	if(confFilePath != NULL)
+		free(confFilePath);
 	config_free(&servConf_st);
 
-	logMsg(__func__, __LINE__, INFO, "Stop program with result code: %d", _rc);
-	return _rc;
+	logMsg(__func__, __LINE__, INFO, "Stop program with result code: %d", rc);
+	return rc;
 }
 

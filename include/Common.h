@@ -31,17 +31,17 @@
 #include "md5.h"
 
 #ifdef DEBUG
-void DEBUG_printlnStdoutMsg(const char* __func_name__, const int __line_number__, log_msg_type_t msg_type, const char* debug_msg);
+void DEBUG_printlnStdoutMsg(const char* _func_name, const int _line_number, log_msg_type_t _msg_type, const char* _debug_msg);
 #endif
 
 char* getStrMsgType(log_msg_type_t msg_type);
-void logMsg(const char* __func_name__, const int __line_number__, log_msg_type_t msg_type, const char *format, ...);
+void logMsg(const char* _func_name, const int _line_number, log_msg_type_t _msg_type, const char *_format, ...);
 
-file_size_t getFileSize(const char* file_name);
+file_size_t getFileSize(const char* _file_name);
 
-char* getFileNameFromPath(const char* file_path);
+char* getFileNameFromPath(const char* _file_path);
 
-int countFileHash_md5(const char* full_file_name, OUT_ARG BYTE* file_hash);
+int countFileHash_md5(const char* _full_file_name, OUT_ARG BYTE* _file_hash);
 
 void exitThread(thread_rc_t _exit_arg);
 

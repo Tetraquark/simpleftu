@@ -9,14 +9,14 @@
 #include "../include/Common.h"
 
 #ifdef DEBUG
-void DEBUG_printlnStdoutMsg(const char* __func_name__, const int __line_number__, log_msg_type_t msg_type, const char* debug_msg){
-	printf("[DEBUG-%s][%s(), {%d}]:: %s\n", getStrMsgType(msg_type), __func_name__, __line_number__, debug_msg);
+void DEBUG_printlnStdoutMsg(const char* _func_name, const int _line_number, log_msg_type_t _msg_type, const char* _debug_msg){
+	printf("[DEBUG-%s][%s(), {%d}]:: %s\n", getStrMsgType(_msg_type), _func_name, _line_number, _debug_msg);
 	fflush(stdout);
 }
 #endif
 
-char* getStrMsgType(log_msg_type_t msg_type){
-	switch(msg_type){
+char* getStrMsgType(log_msg_type_t _msg_type){
+	switch(_msg_type){
 	case INFO:
 		return "INFO";
 	case WARNING:
@@ -28,94 +28,94 @@ char* getStrMsgType(log_msg_type_t msg_type){
 	return "";
 }
 
-void logMsg(const char* __func_name__, const int __line_number__, log_msg_type_t msg_type, const char *format, ...){
+void logMsg(const char* _func_name, const int _line_number, log_msg_type_t _msg_type, const char *_format, ...){
 
 	va_list ap;
 	char msg[MAX_LOG_MSG_LEN];
-	va_start(ap, format);
-	vsnprintf(msg, sizeof(msg), format, ap);
+	va_start(ap, _format);
+	vsnprintf(msg, sizeof(msg), _format, ap);
 	va_end(ap);
 
 #ifdef DEBUG
-	DEBUG_printlnStdoutMsg(__func_name__, __line_number__, msg_type, msg);
+	DEBUG_printlnStdoutMsg(_func_name, _line_number, _msg_type, msg);
 #else
 #endif
 }
 
-file_size_t getFileSize(const char* file_name){
-	file_size_t _file_size = 0;
+file_size_t getFileSize(const char* _file_name){
+	file_size_t file_size = 0;
 #ifdef __linux__
-	struct stat _fileStatbuff;
-	int fd = open(file_name, O_RDONLY);
+	struct stat fileStatbuff;
+	int fd = open(_file_name, O_RDONLY);
 	if(fd == -1){
-		_file_size = -1;
+		file_size = -1;
 	}
 	else{
-		if ((fstat(fd, &_fileStatbuff) != 0) || (!S_ISREG(_fileStatbuff.st_mode))) {
-			_file_size = -1;
+		if ((fstat(fd, &fileStatbuff) != 0) || (!S_ISREG(fileStatbuff.st_mode))) {
+			file_size = -1;
 		}
 		else{
-			_file_size = _fileStatbuff.st_size;
+			file_size = fileStatbuff.st_size;
 		}
 		close(fd);
 	}
 #elif _WIN32
 	HANDLE hFile;
-	hFile = CreateFile(TEXT(file_name), GENERIC_READ, 0, NULL, OPEN_EXISTING,
+	hFile = CreateFile(TEXT(_file_name), GENERIC_READ, 0, NULL, OPEN_EXISTING,
 			FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
 
 	if(hFile == INVALID_HANDLE_VALUE){
-		_file_size = -1;
+		file_size = -1;
 	}
 	else{
 		LARGE_INTEGER u_winFsz;
 		GetFileSizeEx(hFile, &u_winFsz);
 		CloseHandle(hFile);
-		_file_size = u_winFsz.QuadPart;
+		file_size = u_winFsz.QuadPart;
 	}
 #else
-	FILE* fd = fopen(file_name, "rb");
+	FILE* fd = fopen(_file_name, "rb");
 	if(fd == NULL){
-		_file_size = -1;
+		file_size = -1;
 	}
 	else{
 		while(fgetc(fd) != -1)
-			_file_size++;
+			file_size++;
 		fclose(fd);
 	}
 
 #endif
-	return _file_size;
+	return file_size;
 }
 
-char* getFileNameFromPath(const char* file_path){
-	char* _file_name_ptr = NULL;
-	char _path_sep_symbol;
+char* getFileNameFromPath(const char* _file_path){
+	char* file_name_ptr = NULL;
+	char path_sep_symbol;
 
 #ifdef __linux__
-	_path_sep_symbol = '/';
+	path_sep_symbol = '/';
 #elif _WIN32
-	_path_sep_symbol = '\\';
+	path_sep_symbol = '\\';
 #else
-	_path_sep_symbol = '/';
+	path_sep_symbol = '/';
 #endif
 
-	char *s = strrchr(file_path, _path_sep_symbol);
+	char *s = strrchr(_file_path, path_sep_symbol);
 	if(s == NULL){
-		_file_name_ptr = strdup(file_path);
+		file_name_ptr = strdup(_file_path);
 	}
 	else{
-		_file_name_ptr = strdup(s + 1);
+		file_name_ptr = strdup(s + 1);
 	}
-	return _file_name_ptr;
+	return file_name_ptr;
 }
 
 /**
  * TODO: make version for _WIN32
  */
-int countFileHash_md5(const char* full_file_name, OUT_ARG BYTE* file_hash){
-	int fd = 0;
-	char* fd_buff = NULL;
+int countFileHash_md5(const char* _full_file_name, OUT_ARG BYTE* _file_hash){
+	int file_d = 0;
+	char* data_buff = NULL;
 	file_size_t bytes_readed = 0;
 	MD5_CTX ctx;
 
@@ -123,21 +123,21 @@ int countFileHash_md5(const char* full_file_name, OUT_ARG BYTE* file_hash){
 	md5_init(&ctx);
 
 	// open file for sending
-	fd = open(full_file_name, O_RDONLY);
-	if(fd == -1){
+	file_d = open(_full_file_name, O_RDONLY);
+	if(file_d == -1){
 		return EXIT_FAILURE;
 	}
 
-	fd_buff = (char*) malloc((SENDING_FILE_PACKET_SIZE) * sizeof(char));
-	memset(fd_buff, '\0', (SENDING_FILE_PACKET_SIZE) * sizeof(char));
+	data_buff = (char*) malloc((SENDING_FILE_PACKET_SIZE) * sizeof(char));
+	memset(data_buff, '\0', (SENDING_FILE_PACKET_SIZE) * sizeof(char));
 
 	// read file bytes block and update md5 hash-counter
-	while( ((bytes_readed = read(fd, fd_buff, SENDING_FILE_PACKET_SIZE * sizeof(char))) > 0) ){
-		md5_update(&ctx, fd_buff, bytes_readed);
-		memset(fd_buff, '\0', (SENDING_FILE_PACKET_SIZE) * sizeof(char));
+	while( ((bytes_readed = read(file_d, data_buff, SENDING_FILE_PACKET_SIZE * sizeof(char))) > 0) ){
+		md5_update(&ctx, data_buff, bytes_readed);
+		memset(data_buff, '\0', (SENDING_FILE_PACKET_SIZE) * sizeof(char));
 	}
 
-	md5_final(&ctx, file_hash);
+	md5_final(&ctx, _file_hash);
 
 	return EXIT_SUCCESS;
 }

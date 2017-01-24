@@ -18,7 +18,7 @@
  */
 #define OUT_ARG
 
-#define MAX_LOG_MSG_LEN 1024
+#define MAX_LOG_MSG_LEN 2048
 
 #ifdef DEBUG
 #define DEFAULT_SERVER_PORT DEBUG_SERVER_PORT

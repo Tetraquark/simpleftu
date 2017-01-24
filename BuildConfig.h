@@ -56,7 +56,7 @@
 #define DEBUG_SERVER_IP "127.0.0.1"
 #define DEBUG_SERVER_PORT 10888
 #define DEBUG_SERVER_FILES_STORAGE_PATH "sftu_storage/"
-#define DEBUG_PASSWORD "qwer1234\0"
+#define DEBUG_PASSWORD "qwer1234"
 #define DEBUG_CONFFILE_NAME "config.cfg"
 #endif	/* end #ifdef DEBUG */
 

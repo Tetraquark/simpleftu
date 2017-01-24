@@ -24,9 +24,6 @@
  * 11) client receives result of md5 hashes comparing and transfer result message: netmsg_stat_code_t
  */
 int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_FILE_PATH_LEN + 1], char* _serv_pass){
-	logMsg(__func__, __LINE__, INFO, "Start DEBUG_sendTestFile: _serv_ip: %s ; _serv_port: %d ; _serv_pass: %s ; send_filepath: %s",
-			_serv_ip, _serv_port, _serv_pass, _sendingfile_path);
-
 	struct sockaddr_in tcpsocket_addr_strct;
 	socket_t socketDescr = 0;
 	size_t outputMsgSize = 0;
@@ -39,7 +36,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	}
 
 	// connect to server
-	logMsg(__func__, __LINE__, INFO, "Try to connect to server: %s", _serv_ip);
+	logMsg(__func__, __LINE__, INFO, "Try to connect to server: %s:%d", _serv_ip, _serv_port);
 	if(connect(socketDescr, (struct sockaddr *) &tcpsocket_addr_strct, sizeof(tcpsocket_addr_strct)) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error in connect to server.");
 		return EXIT_FAILURE;
@@ -83,7 +80,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	}
 
 	// get the file size
-	logMsg(__func__, __LINE__, INFO, "Count sending file size.");
+	logMsg(__func__, __LINE__, INFO, "Counting the sending file size.");
 	file_size_t file_size = 0;
 	file_size = getFileSize(_sendingfile_path);
 	if(file_size == -1){
@@ -148,11 +145,11 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 		return EXIT_SUCCESS;
 	}
 	else{
-		logMsg(__func__, __LINE__, ERROR, "File info was sent.");
+		logMsg(__func__, __LINE__, INFO, "The file info was sent.");
 	}
 
 	// count the file md5 hash
-	logMsg(__func__, __LINE__, INFO, "Count sending file md5 hash.");
+	logMsg(__func__, __LINE__, INFO, "Counting the sending file md5 hash.");
 	BYTE hashArr[MD5_BLOCK_SIZE];
 	memset(hashArr, '\0', MD5_BLOCK_SIZE * sizeof(BYTE));
 	if(countFileHash_md5(_sendingfile_path, hashArr)){
@@ -210,7 +207,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 		logMsg(__func__, __LINE__, ERROR, "Error sending file. Exit.");
 		close(socketDescr);
 	}
-	logMsg(__func__, __LINE__, INFO, "Total send file bytes: %lld.", bytes_sended);
+	logMsg(__func__, __LINE__, INFO, "Total sent bytes: %lld.", bytes_sended);
 
 	// recv result of md5 hashes comparing and transfer result message
 	if(socket_recvBytes(socketDescr, sizeof(status_code), &status_code) == -1){

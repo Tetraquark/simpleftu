@@ -26,7 +26,7 @@
  * @param out_byteArr a pointer to an BYTE array with allocated memory which size is hexStrSize / 2.
  * @return 0 if success; 1 is fail.
  */
-int fromHexStrToByteArr(const char* hexStr, int hexStr_size, OUT_ARG BYTE* out_byteArr);
+int fromHexStrToByteArr(const char* _hexStr, int _hexStr_size, OUT_ARG BYTE* _out_byteArr);
 
 /**
  * Convert array of bytes into string with hexadecimal format.
@@ -36,12 +36,12 @@ int fromHexStrToByteArr(const char* hexStr, int hexStr_size, OUT_ARG BYTE* out_b
  * @param out_strArr a pointer to an char array with allocated memory which size is hexStrSize * 2.
  * @return 0 if success; 1 is fail.
  */
-int fromByteArrToHexStr(const BYTE* byteArr, int byteArr_size, OUT_ARG char** out_strArr);
+int fromByteArrToHexStr(const BYTE* _byteArr, int _byteArr_size, OUT_ARG char** _out_strArr);
 
 /**
  * Compare two md5 hashes with MD5_BLOCK_SIZE length.
  * @return 0 if hashes are the same.
  */
-int cmpHash_md5(const BYTE hash1[MD5_BLOCK_SIZE], const BYTE hash2[MD5_BLOCK_SIZE]);
+int cmpHash_md5(const BYTE _hash1[MD5_BLOCK_SIZE], const BYTE _hash2[MD5_BLOCK_SIZE]);
 
 #endif /* INCLUDE_CRYPTO_H_ */

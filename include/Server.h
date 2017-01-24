@@ -32,13 +32,13 @@
 #include "Serializer.h"
 #include "Crypto.h"
 
-int startServTCPListener(serverConfig_t* serverConf_ptr);
+int startServTCPListener(serverConfig_t* _serv_conf_ptr);
 
 thread_rc_t startListenTCPSocket(void* _thread_data_strc);
 
 thread_rc_t startPeerThread(void* _thread_data_strc);
 
 // stopgap measure
-bool_t checkPassword(const char* servPassStr, const char* inputPassStr);
+bool_t checkPassword(const char* _serv_passw_str, const char* _in_passw_str);
 
 #endif /* INCLUDE_SERVER_H_ */

@@ -2,7 +2,8 @@
  * Network.h
  *
  *  Created on: 24 янв. 2017 г.
- *      Author: tetraquark
+ *  	Project repo URL: https://github.com/Tetraquark/simpleftu
+ *      Author: tetraquark | tetraquark.ru
  */
 
 #ifndef INCLUDE_NETWORK_H_

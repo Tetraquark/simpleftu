@@ -8,40 +8,40 @@
 
 #include "../include/Server.h"
 
-int startServTCPListener(serverConfig_t* serverConf_ptr){
+int startServTCPListener(serverConfig_t* _serv_conf_ptr){
 	logMsg(__func__, __LINE__, INFO, "Start server TCP Listener.");
 
-	struct sockaddr_in tcpSockaddr;
-	socket_t socketFd = 0;
-	int listenPort = serverConf_ptr->port;
-	int sockCommPipes[2];
-	serverSysInfo_t serverThreadInfo;
-	thread_t serverThread = 0;
+	struct sockaddr_in serv_sockaddr;
+	socket_t serv_socket_d = 0;
+	int listenPort = _serv_conf_ptr->port;
+	int serv_commands_pipes[2];
+	serverSysInfo_t serv_threadInfo;
+	thread_t serv_thread = 0;
 	int thread_start_rc = 0;
 
-	if(pipe(sockCommPipes) == -1){
+	if(pipe(serv_commands_pipes) == -1){
 		logMsg(__func__, __LINE__, ERROR, "Error in pipes opening. Abort.");
 		return EXIT_FAILURE;
 	}
 	// create TCP listener socket
-	if(socket_createServTCP(listenPort, &tcpSockaddr, &socketFd)){
+	if(socket_createServTCP(listenPort, &serv_sockaddr, &serv_socket_d)){
 		logMsg(__func__, __LINE__, ERROR, "Error in creating server TCP socket. Abort.");
 
 		for(int i = 0; i < 2; i++)
-			close(sockCommPipes[i]);
+			close(serv_commands_pipes[i]);
 		return EXIT_FAILURE;
 	}
 
-	serverThreadInfo.inputCommsPipeFd = sockCommPipes[1];
-	serverThreadInfo.socket_d = socketFd;
-	serverThreadInfo.conf = serverConf_ptr;
+	serv_threadInfo.inputCommsPipeFd = serv_commands_pipes[1];
+	serv_threadInfo.socket_d = serv_socket_d;
+	serv_threadInfo.conf = _serv_conf_ptr;
 
 	// start server TCP listener pthread
 #ifdef _WIN32
-	serverThread = CreateThread(NULL, 0, startListenTCPSocket, &serverThreadInfo, 0, NULL);
-	thread_start_rc = serverThread;
+	serv_thread = CreateThread(NULL, 0, startListenTCPSocket, &serv_threadInfo, 0, NULL);
+	thread_start_rc = serv_thread;
 #elif __linux__
-	thread_start_rc = pthread_create(&serverThread, NULL, startListenTCPSocket, (void*) &serverThreadInfo);
+	thread_start_rc = pthread_create(&serv_thread, NULL, startListenTCPSocket, (void*) &serv_threadInfo);
 #endif
 
 	if( thread_start_rc ){
@@ -52,15 +52,15 @@ int startServTCPListener(serverConfig_t* serverConf_ptr){
 
 		// close commands pipes
 		for(int i = 0; i < 2; i++)
-			close(sockCommPipes[i]);
+			close(serv_commands_pipes[i]);
 		return EXIT_FAILURE;
 	}
 	else{
 		// if pthread creating was successful
-		close(sockCommPipes[1]);
+		close(serv_commands_pipes[1]);
 
 		logMsg(__func__, __LINE__, INFO, "\"startListenTCPSocket\" pthread started successful. Join pthread.");
-		joinThread_inf(serverThread);
+		joinThread_inf(serv_thread);
 	}
 
 	//TODO: close socket!
@@ -76,17 +76,17 @@ int startServTCPListener(serverConfig_t* serverConf_ptr){
 thread_rc_t startListenTCPSocket(void* _thread_data_strc){
 	logMsg(__func__, __LINE__, INFO, "Start server TCP listener pthread.");
 
-	serverCommands_t currCommAction = LISTEN;
+	serverCommands_t curr_command = LISTEN;
 	serverSysInfo_t* server_info = (serverSysInfo_t*) _thread_data_strc;
 
-	pthread_t connectedPeersArr[10];		//TODO: hardcoded number of peers!
-	int connectedPeersNum = 0;
+	pthread_t connected_peersArr[10];		//TODO: hardcoded number of peers!
+	int connected_peersNum = 0;
 
 	listen(server_info->socket_d, 1);		//TODO: hardcoded nuber of backlog!
 
-	while(currCommAction != STOP_SERVER){
+	while(curr_command != STOP_SERVER){
 
-		if(currCommAction == LISTEN){
+		if(curr_command == LISTEN){
 			struct sockaddr_in tcpInputClient_addr;
 			socket_t inputClientFd = 0;
 			socklen_t addrLen = sizeof(tcpInputClient_addr);
@@ -102,7 +102,7 @@ thread_rc_t startListenTCPSocket(void* _thread_data_strc){
 			serverSysInfo_t peerInfo;
 			peerInfo.conf = server_info->conf;
 			peerInfo.socket_d = inputClientFd;
-			if( pthread_create(&(connectedPeersArr[connectedPeersNum]), NULL, startPeerThread, (void*) &peerInfo) ){
+			if( pthread_create(&(connected_peersArr[connected_peersNum]), NULL, startPeerThread, (void*) &peerInfo) ){
 				// pthread creating error
 				logMsg(__func__, __LINE__, ERROR, "Error in creating peer pthread.");
 
@@ -111,6 +111,7 @@ thread_rc_t startListenTCPSocket(void* _thread_data_strc){
 				exitThread((thread_rc_t) EXIT_FAILURE);
 			}
 			else{
+				connected_peersNum++;
 				// if pthread creating was successful
 			}
 
@@ -203,29 +204,29 @@ static file_size_t __recvAndSaveFile(int _socket_fd, char* _tmp_file_fullpath, f
  * 11) client receives result of md5 hashes comparing and transfer result message: netmsg_stat_code_t
  */
 thread_rc_t startPeerThread(void* _thread_data_strc){
-	logMsg(__func__, __LINE__, INFO, "Start peer pthread.");
+	logMsg(__func__, __LINE__, INFO, "Start connected peer thread.");
 	serverSysInfo_t* connect_info = (serverSysInfo_t*) _thread_data_strc;
 	char* serv_passw = connect_info->conf->password;		// server password
 	char* serv_storage_dir_path = connect_info->conf->storageFolderPath;
-	int inputConnectFd = connect_info->socket_d;				// input connection FD
-	ssize_t inputMsgSize = 0;
+	int peer_socket_d = connect_info->socket_d;				// input connection socket descriptor
+	ssize_t input_msg_size = 0;
 	netmsg_stat_code_t status_code = INCORRECT;
 
 	// get input password message size
-	if(socket_recvBytes(inputConnectFd, sizeof(inputMsgSize), (void*)&inputMsgSize) == -1){
+	if(socket_recvBytes(peer_socket_d, sizeof(input_msg_size), (void*)&input_msg_size) == -1){
 		logMsg(__func__, __LINE__, ERROR, "Error receiving input message size from socket. Abort peer connection.");
-		socket_close(inputConnectFd);
+		socket_close(peer_socket_d);
 		exitThread(NULL);
 	}
 
 	// get password message from client
-	char* input_passw_buff = (char*) malloc((inputMsgSize));
-	memset(input_passw_buff, 0, inputMsgSize);
-	if(socket_recvBytes(inputConnectFd, inputMsgSize, (void*) input_passw_buff) == -1){
+	char* input_passw_buff = (char*) malloc(input_msg_size + 1);
+	memset(input_passw_buff, 0, input_msg_size + 1);
+	if(socket_recvBytes(peer_socket_d, input_msg_size, (void*) input_passw_buff) == -1){
 		logMsg(__func__, __LINE__, ERROR, "Peer password receiving error. Abort peer connection. %s", input_passw_buff);
 		free(input_passw_buff);
 
-		socket_close(inputConnectFd);
+		socket_close(peer_socket_d);
 		exitThread(NULL);
 	}
 
@@ -238,49 +239,49 @@ thread_rc_t startPeerThread(void* _thread_data_strc){
 		logMsg(__func__, __LINE__, INFO, "Abort peer connection.");
 
 		status_code = INCORRECT;
-		socket_sendBytes(inputConnectFd, &status_code, sizeof(status_code));
+		socket_sendBytes(peer_socket_d, &status_code, sizeof(status_code));
 
 		// if wrong password - close connection and close pthread
 		free(input_passw_buff);
 
-		socket_close(inputConnectFd);
+		socket_close(peer_socket_d);
 		exitThread(NULL);
 	}
 	free(input_passw_buff);
 
 	// send answer message to peer
 	status_code = CORRECT;
-	if(socket_sendBytes(inputConnectFd, &status_code, sizeof(status_code)) < 0){
+	if(socket_sendBytes(peer_socket_d, &status_code, sizeof(status_code)) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error sending answer message. Abort peer connection.");
 
-		socket_close(inputConnectFd);
+		socket_close(peer_socket_d);
 		exitThread(NULL);
 	}
 
-	inputMsgSize = 0;
+	input_msg_size = 0;
 	// get input file info message size
-	if(socket_recvBytes(inputConnectFd, sizeof(inputMsgSize), (void*)&inputMsgSize) == -1){
+	if(socket_recvBytes(peer_socket_d, sizeof(input_msg_size), (void*)&input_msg_size) == -1){
 		logMsg(__func__, __LINE__, ERROR, "Error receiving input message size from socket. Abort peer connection.");
 
-		socket_close(inputConnectFd);
+		socket_close(peer_socket_d);
 		exitThread(NULL);
 	}
 
 	// get file info message
 	file_info_msg_t recv_fileInfo_strc;
-	size_t input_msg_buffSize = sizeof(char) * inputMsgSize;
+	size_t input_msg_buffSize = sizeof(char) * input_msg_size;
 	char* fileInfo_msgBuff = (char*) malloc(input_msg_buffSize);
 	memset(fileInfo_msgBuff, '\0', input_msg_buffSize);
 
-	if(socket_recvBytes(inputConnectFd, input_msg_buffSize, (void*) fileInfo_msgBuff) == -1){
+	if(socket_recvBytes(peer_socket_d, input_msg_buffSize, (void*) fileInfo_msgBuff) == -1){
 		logMsg(__func__, __LINE__, ERROR,
 				"Peer file info message receiving error. Abort peer connection.");
 		free(fileInfo_msgBuff);
 
-		socket_close(inputConnectFd);
+		socket_close(peer_socket_d);
 		exitThread(NULL);
 	}
-	logMsg(__func__, __LINE__, INFO, "Get info of the input file: %s", fileInfo_msgBuff);
+	//logMsg(__func__, __LINE__, INFO, "Get info of the input file: %s", fileInfo_msgBuff);
 
 	// deserialize input file info message
 	if(deserialize_FileInfoMsg(&recv_fileInfo_strc, fileInfo_msgBuff, ';')){
@@ -288,51 +289,50 @@ thread_rc_t startPeerThread(void* _thread_data_strc){
 				"Deserialize input file info message error. Abort peer connection.");
 
 		status_code = INCORRECT;
-		socket_sendBytes(inputConnectFd, &status_code, sizeof(status_code));
+		socket_sendBytes(peer_socket_d, &status_code, sizeof(status_code));
 
 		free(fileInfo_msgBuff);
 
-		socket_close(inputConnectFd);
+		socket_close(peer_socket_d);
 		exitThread(NULL);
 	}
 	free(fileInfo_msgBuff);
 
 	// send answer message to peer
 	status_code = CORRECT;
-	if(socket_sendBytes(inputConnectFd, &status_code, sizeof(status_code)) < 0){
+	if(socket_sendBytes(peer_socket_d, &status_code, sizeof(status_code)) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error sending answer message. Abort peer connection.");
 
-		socket_close(inputConnectFd);
+		socket_close(peer_socket_d);
 		exitThread(NULL);
 	}
 
-	logMsg(__func__, __LINE__, INFO, "Received file info msg of peer. Filesize %lld; Filename: %s",
+	logMsg(__func__, __LINE__, INFO, "Received the file info: file size %lld; file name: %s",
 			recv_fileInfo_strc.fileSize, recv_fileInfo_strc.fileName);
 
-	inputMsgSize = 0;
+	input_msg_size = 0;
 	// get input file md5 hash message size
-	if(socket_recvBytes(inputConnectFd, sizeof(inputMsgSize), (void*)&inputMsgSize) == -1){
+	if(socket_recvBytes(peer_socket_d, sizeof(input_msg_size), (void*)&input_msg_size) == -1){
 		logMsg(__func__, __LINE__, ERROR, "Error receiving input message size from socket. Abort peer connection.");
 
-		socket_close(inputConnectFd);
+		socket_close(peer_socket_d);
 		exitThread(NULL);
 	}
 
-	logMsg(__func__, __LINE__, INFO, "GET HASH: %ld", inputMsgSize);
-	// TODO: maybe add cmp inputMsgSize with MD5_BLOCK_SIZE * 2?
+	// TODO: maybe add cmp input_msg_size with MD5_BLOCK_SIZE * 2?
 
 	// get file md5 hash from peer
 	BYTE peer_fileHash_md5[MD5_BLOCK_SIZE];
 	memset(peer_fileHash_md5, '\0', MD5_BLOCK_SIZE * sizeof(BYTE));
-	char* peer_fileHash_md5_str = (char*) malloc(inputMsgSize);
-	memset(peer_fileHash_md5_str, '\0', inputMsgSize);
+	char* peer_fileHash_md5_str = (char*) malloc(input_msg_size);
+	memset(peer_fileHash_md5_str, '\0', input_msg_size);
 
-	if(socket_recvBytes(inputConnectFd, inputMsgSize, peer_fileHash_md5_str) == -1){
+	if(socket_recvBytes(peer_socket_d, input_msg_size, peer_fileHash_md5_str) == -1){
 		logMsg(__func__, __LINE__, ERROR,
 				"Peer file md5 hash message receiving error. Abort peer connection.");
 		free(peer_fileHash_md5_str);
 
-		socket_close(inputConnectFd);
+		socket_close(peer_socket_d);
 		exitThread(NULL);
 	}
 	fromHexStrToByteArr(peer_fileHash_md5_str, MD5_BLOCK_SIZE * 2, peer_fileHash_md5);
@@ -358,21 +358,21 @@ thread_rc_t startPeerThread(void* _thread_data_strc){
 
 	// send answer message to peer
 	status_code = CORRECT;
-	if(socket_sendBytes(inputConnectFd, &status_code, sizeof(status_code)) < 0){
+	if(socket_sendBytes(peer_socket_d, &status_code, sizeof(status_code)) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error sending answer message. Abort peer connection.");
 
-		socket_close(inputConnectFd);
+		socket_close(peer_socket_d);
 		exitThread(NULL);
 	}
 
 	// recv file
 	file_size_t recvTotalBytes = 0;
-	recvTotalBytes = __recvAndSaveFile(inputConnectFd, tmp_file_fullpath_str, recv_fileInfo_strc.fileSize, tmp_fileHash_md5);
+	recvTotalBytes = __recvAndSaveFile(peer_socket_d, tmp_file_fullpath_str, recv_fileInfo_strc.fileSize, tmp_fileHash_md5);
 	if(recvTotalBytes == -1){
 		logMsg(__func__, __LINE__, ERROR, "Error file transferring. Abort peer connection.");
 		free(tmp_file_fullpath_str);
 
-		socket_close(inputConnectFd);
+		socket_close(peer_socket_d);
 		exitThread(NULL);
 	}
 	free(tmp_file_fullpath_str);
@@ -397,29 +397,21 @@ thread_rc_t startPeerThread(void* _thread_data_strc){
 		status_code = CORRECT;
 	}
 
-	if(socket_sendBytes(inputConnectFd, &status_code, sizeof(status_code)) < 0){
+	if(socket_sendBytes(peer_socket_d, &status_code, sizeof(status_code)) < 0){
 		logMsg(__func__, __LINE__, ERROR, "Error sending answer message. Abort peer connection.");
 
-		socket_close(inputConnectFd);
+		free(tmp_fileHash_md5_str);
+
+		socket_close(peer_socket_d);
 		exitThread(NULL);
 	}
-
-	logMsg(__func__, __LINE__, INFO, "Transfer is %s. Close connection.",
-			status_code == INCORRECT ? "unsuccessful" : "successful");
-
-	/*
-	if(send(inputConnectFd, &fileTransferRes, sizeof(fileTransferRes), 0) < 0){
-		logMsg(__func__, __LINE__, ERROR, "Error in sending message to peer about file getting result. Abort peer connection.");
-		// Sending result message error
-		// TODO: free mem and close descriptors
-		return EXIT_FAILURE;
-	}
-	*/
-
-	// close pthread
-	socket_close(inputConnectFd);
 	free(tmp_fileHash_md5_str);
 
+	logMsg(__func__, __LINE__, INFO, "Transfer is %s. Close connection with peer.",
+			status_code == INCORRECT ? "unsuccessful" : "successful");
+
+	// close pthread
+	socket_close(peer_socket_d);
 	exitThread(NULL);
 }
 
@@ -427,10 +419,10 @@ thread_rc_t startPeerThread(void* _thread_data_strc){
  * Compare two char arrays with passwords.
  * @return TRUE if passwords is same
  */
-bool_t checkPassword(const char* servPassStr, const char* inputPassStr){
+bool_t checkPassword(const char* _serv_passw_str, const char* _in_passw_str){
 	int cmp_res = 0;
 
-	cmp_res = strncmp(servPassStr, inputPassStr, MAX_PASS_LEN * sizeof(char));
+	cmp_res = strncmp(_serv_passw_str, _in_passw_str, MAX_PASS_LEN * sizeof(char));
 
 	if(!cmp_res)
 		return TRUE;
