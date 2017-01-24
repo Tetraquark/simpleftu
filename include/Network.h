@@ -15,6 +15,8 @@
 #include <string.h>
 
 #ifdef _WIN32
+#include <windows.h>
+#include <winsock.h>
 #elif __linux__
 #include <sys/socket.h>
 #include <arpa/inet.h>

@@ -31,21 +31,21 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 
 	// init tcp socket
 	if(socket_createPeerTCP(_serv_ip, _serv_port, &tcpsocket_addr_strct, &socketDescr)){
-		logMsg(__func__, __LINE__, ERROR, "Error creating TCP socket. Abort.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error creating TCP socket. Abort.");
 		return EXIT_FAILURE;
 	}
 
 	// connect to server
-	logMsg(__func__, __LINE__, INFO, "Try to connect to server: %s:%d", _serv_ip, _serv_port);
+	logMsg(__func__, __LINE__, LOG_INFO, "Try to connect to server: %s:%d", _serv_ip, _serv_port);
 	if(connect(socketDescr, (struct sockaddr *) &tcpsocket_addr_strct, sizeof(tcpsocket_addr_strct)) < 0){
-		logMsg(__func__, __LINE__, ERROR, "Error in connect to server.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error in connect to server.");
 		return EXIT_FAILURE;
 	}
 
 	// send password message size
 	outputMsgSize = strlen(_serv_pass) * sizeof(char);
 	if(socket_sendBytes(socketDescr, &outputMsgSize, sizeof(outputMsgSize)) < 0){
-		logMsg(__func__, __LINE__, ERROR, "Error in sending message size. Abort connection.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error in sending message size. Abort connection.");
 
 		// TODO: free mem and close descriptors
 		socket_close(socketDescr);
@@ -53,9 +53,9 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	}
 
 	// send password
-	logMsg(__func__, __LINE__, INFO, "Try to send password: %s", _serv_pass);
+	logMsg(__func__, __LINE__, LOG_INFO, "Try to send password: %s", _serv_pass);
 	if(socket_sendBytes(socketDescr, _serv_pass, outputMsgSize) < 0){
-		logMsg(__func__, __LINE__, ERROR, "Error in sending password to server. Abort connection.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error in sending password to server. Abort connection.");
 
 		// TODO: free mem and close descriptors
 		socket_close(socketDescr);
@@ -64,27 +64,27 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 
 	// recv checking of password result
 	if(socket_recvBytes(socketDescr, sizeof(status_code), &status_code) == -1){
-		logMsg(__func__, __LINE__, ERROR, "Error receiving answer message from server. Abort connection.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error receiving answer message from server. Abort connection.");
 
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
 	}
 	if(status_code == INCORRECT){
-		logMsg(__func__, __LINE__, INFO, "Password is incorrect. Abort connection.");
+		logMsg(__func__, __LINE__, LOG_INFO, "Password is incorrect. Abort connection.");
 
 		socket_close(socketDescr);
 		return EXIT_SUCCESS;
 	}
 	else{
-		logMsg(__func__, __LINE__, INFO, "Password is correct.");
+		logMsg(__func__, __LINE__, LOG_INFO, "Password is correct.");
 	}
 
 	// get the file size
-	logMsg(__func__, __LINE__, INFO, "Counting the sending file size.");
+	logMsg(__func__, __LINE__, LOG_INFO, "Counting the sending file size.");
 	file_size_t file_size = 0;
 	file_size = getFileSize(_sendingfile_path);
 	if(file_size == -1){
-		logMsg(__func__, __LINE__, ERROR, "Cant open file at: %s", _sendingfile_path);
+		logMsg(__func__, __LINE__, LOG_ERROR, "Cant open file at: %s", _sendingfile_path);
 
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
@@ -101,7 +101,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 		free(_fileName_str);
 	}
 	else{
-		logMsg(__func__, __LINE__, ERROR, "Error. Can't get name of file from input path string. Abort.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error. Can't get name of file from input path string. Abort.");
 
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
@@ -111,7 +111,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	char* fileinfo_msg_str = NULL;
 	outputMsgSize = serialize_FileInfoMsg(fileinfo_struct, ';', &fileinfo_msg_str);
 	if(socket_sendBytes(socketDescr, &outputMsgSize, sizeof(outputMsgSize)) < 0){
-		logMsg(__func__, __LINE__, ERROR, "Error in sending message size. Abort connection.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error in sending message size. Abort connection.");
 
 		// TODO: free mem and close descriptors
 		socket_close(socketDescr);
@@ -119,9 +119,9 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	}
 
 	// send the file info
-	logMsg(__func__, __LINE__, INFO, "Try to send file info msg: %s", fileinfo_msg_str);
+	logMsg(__func__, __LINE__, LOG_INFO, "Try to send file info msg: %s", fileinfo_msg_str);
 	if(socket_sendBytes(socketDescr, fileinfo_msg_str, outputMsgSize) < 0){
-		logMsg(__func__, __LINE__, ERROR, "Error sending file info to server. Abort connection.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error sending file info to server. Abort connection.");
 
 		free(fileinfo_msg_str);
 
@@ -133,27 +133,27 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 
 	// recv deserialization file info message result from server
 	if(socket_recvBytes(socketDescr, sizeof(status_code), &status_code) == -1){
-		logMsg(__func__, __LINE__, ERROR, "Error receiving answer message from server. Abort connection.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error receiving answer message from server. Abort connection.");
 
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
 	}
 	if(status_code == INCORRECT){
-		logMsg(__func__, __LINE__, ERROR, "Error sending file info. Abort connection.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error sending file info. Abort connection.");
 
 		socket_close(socketDescr);
 		return EXIT_SUCCESS;
 	}
 	else{
-		logMsg(__func__, __LINE__, INFO, "The file info was sent.");
+		logMsg(__func__, __LINE__, LOG_INFO, "The file info was sent.");
 	}
 
 	// count the file md5 hash
-	logMsg(__func__, __LINE__, INFO, "Counting the sending file md5 hash.");
+	logMsg(__func__, __LINE__, LOG_INFO, "Counting the sending file md5 hash.");
 	BYTE hashArr[MD5_BLOCK_SIZE];
 	memset(hashArr, '\0', MD5_BLOCK_SIZE * sizeof(BYTE));
 	if(countFileHash_md5(_sendingfile_path, hashArr)){
-		logMsg(__func__, __LINE__, ERROR, "Error in sending file info to server. Abort connection.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error in sending file info to server. Abort connection.");
 
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
@@ -166,7 +166,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 
 	// send the file md5 hash message size
 	if(socket_sendBytes(socketDescr, &outputMsgSize, sizeof(outputMsgSize)) < 0){
-		logMsg(__func__, __LINE__, ERROR, "Error in sending message size. Abort connection.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error in sending message size. Abort connection.");
 
 		// TODO: free mem and close descriptors
 		socket_close(socketDescr);
@@ -174,9 +174,9 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	}
 
 	// send the file md5 hash
-	logMsg(__func__, __LINE__, INFO, "Try to send the file md5 hash: %s", hashArr_str);
+	logMsg(__func__, __LINE__, LOG_INFO, "Try to send the file md5 hash: %s", hashArr_str);
 	if(socket_sendBytes(socketDescr, hashArr_str, outputMsgSize) < 0){
-		logMsg(__func__, __LINE__, ERROR, "Error in sending file md5 hash to server. Abort connection.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error in sending file md5 hash to server. Abort connection.");
 
 		free(hashArr_str);
 
@@ -187,42 +187,42 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 
 	// recv file md5 hash sending result
 	if(socket_recvBytes(socketDescr, sizeof(status_code), &status_code) == -1){
-		logMsg(__func__, __LINE__, ERROR, "Error receiving answer message from server. Abort connection.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error receiving answer message from server. Abort connection.");
 
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
 	}
 	if(status_code == INCORRECT){
-		logMsg(__func__, __LINE__, ERROR, "Error sending file md5 hash. Abort connection.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error sending file md5 hash. Abort connection.");
 
 		socket_close(socketDescr);
 		return EXIT_SUCCESS;
 	}
-	logMsg(__func__, __LINE__, INFO, "File md5 hash was sent.");
+	logMsg(__func__, __LINE__, LOG_INFO, "File md5 hash was sent.");
 
 	// send the file
-	logMsg(__func__, __LINE__, INFO, "Start file transferring.");
+	logMsg(__func__, __LINE__, LOG_INFO, "Start file transferring.");
 	file_size_t bytes_sended = sendFile(socketDescr, _sendingfile_path);
 	if(bytes_sended == -1){
-		logMsg(__func__, __LINE__, ERROR, "Error sending file. Exit.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error sending file. Exit.");
 		close(socketDescr);
 	}
-	logMsg(__func__, __LINE__, INFO, "Total sent bytes: %lld.", bytes_sended);
+	logMsg(__func__, __LINE__, LOG_INFO, "Total sent bytes: %lld.", bytes_sended);
 
 	// recv result of md5 hashes comparing and transfer result message
 	if(socket_recvBytes(socketDescr, sizeof(status_code), &status_code) == -1){
-		logMsg(__func__, __LINE__, ERROR, "Error receiving answer message from server. Abort connection.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error receiving answer message from server. Abort connection.");
 
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
 	}
 	if(status_code == INCORRECT){
-		logMsg(__func__, __LINE__, ERROR, "Error transferring file. Abort connection.");
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error transferring file. Abort connection.");
 
 		socket_close(socketDescr);
 		return EXIT_SUCCESS;
 	}
-	logMsg(__func__, __LINE__, INFO, "File successfully transferred.");
+	logMsg(__func__, __LINE__, LOG_INFO, "File successfully transferred.");
 
 	shutdown(socketDescr, SHUT_WR);
 	//close(socketDescr);
@@ -247,7 +247,7 @@ file_size_t sendFile(int _socket, const char* _full_file_name){
 		while( ((bytes_readed = read(file_d, fd_buff, SENDING_FILE_PACKET_SIZE * sizeof(char))) > 0) ){
 
 			if(socket_sendBytes(_socket, &bytes_readed, sizeof(bytes_readed)) < 0){
-				logMsg(__func__, __LINE__, ERROR, "Data packet send error. Abort connection.");
+				logMsg(__func__, __LINE__, LOG_ERROR, "Data packet send error. Abort connection.");
 
 				close(file_d);
 				total_bytes_sended = -1;
@@ -255,7 +255,7 @@ file_size_t sendFile(int _socket, const char* _full_file_name){
 			}
 
 			if( (bytes_sended = socket_sendBytes(_socket, fd_buff, bytes_readed)) < 0){
-				logMsg(__func__, __LINE__, ERROR, "Error send file data block to server. Abort connection.");
+				logMsg(__func__, __LINE__, LOG_ERROR, "Error send file data block to server. Abort connection.");
 
 				close(file_d);
 				total_bytes_sended = -1;

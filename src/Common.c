@@ -17,11 +17,11 @@ void DEBUG_printlnStdoutMsg(const char* _func_name, const int _line_number, log_
 
 char* getStrMsgType(log_msg_type_t _msg_type){
 	switch(_msg_type){
-	case INFO:
+	case LOG_INFO:
 		return "INFO";
-	case WARNING:
+	case LOG_WARNING:
 		return "WARNING";
-	case ERROR:
+	case LOG_ERROR:
 		return "ERROR";
 	}
 
@@ -115,6 +115,7 @@ char* getFileNameFromPath(const char* _file_path){
  */
 int countFileHash_md5(const char* _full_file_name, OUT_ARG BYTE* _file_hash){
 	int file_d = 0;
+
 	char* data_buff = NULL;
 	file_size_t bytes_readed = 0;
 	MD5_CTX ctx;
@@ -124,7 +125,7 @@ int countFileHash_md5(const char* _full_file_name, OUT_ARG BYTE* _file_hash){
 
 	// open file for sending
 	file_d = open(_full_file_name, O_RDONLY);
-	if(file_d == -1){
+	if(-1 == file_d){
 		return EXIT_FAILURE;
 	}
 
@@ -139,6 +140,7 @@ int countFileHash_md5(const char* _full_file_name, OUT_ARG BYTE* _file_hash){
 
 	md5_final(&ctx, _file_hash);
 
+	close(file_d);
 	return EXIT_SUCCESS;
 }
 

@@ -20,7 +20,7 @@
 #include <pthread.h>
 #elif _WIN32
 #include <windows.h>
-#include <winsock.h>
+#include <ws2tcpip.h>
 #endif
 
 #include "../BuildConfig.h"

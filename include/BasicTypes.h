@@ -13,6 +13,8 @@
 
 #ifdef __linux__
 #include <pthread.h>
+#elif _WIN32
+#include <windows.h>
 #endif
 
 #include "../BuildConfig.h"
@@ -49,15 +51,15 @@ typedef void* thread_rc_t;
 #endif
 
 enum __bool{
-	FALSE = 0,
-	TRUE
+	B_FALSE = 0,
+	B_TRUE
 };
 typedef enum __bool bool_t;
 
 enum __log_msg_type{
-	INFO = 0,
-	WARNING,
-	ERROR
+	LOG_INFO = 0,
+	LOG_WARNING,
+	LOG_ERROR
 };
 typedef enum __log_msg_type log_msg_type_t;
 

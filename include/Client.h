@@ -10,13 +10,13 @@
 #define INCLUDE_CLIENT_H_
 
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #ifdef __linux__
 #include <libgen.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #endif
 
 #include "../BuildConfig.h"
