@@ -18,8 +18,6 @@
 #ifdef __linux__
 #include <sys/stat.h>
 #include <pthread.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #elif _WIN32
 #include <windows.h>
 #include <winsock.h>
@@ -30,20 +28,17 @@
 #include "BasicConstants.h"
 #include "md5.h"
 #include "Common.h"
+#include "Network.h"
 #include "Serializer.h"
 #include "Crypto.h"
 
 int startServTCPListener(serverConfig_t* serverConf_ptr);
 
-void* startListenTCPSocket(void* threadData);
+thread_rc_t startListenTCPSocket(void* _thread_data_strc);
 
-void* startPeerThread(void* threadData);
-
-int createServTCPSocket(struct sockaddr_in* _tcpsocket_addr, int* _socket_desc, int _port);
+thread_rc_t startPeerThread(void* _thread_data_strc);
 
 // stopgap measure
 bool_t checkPassword(const char* servPassStr, const char* inputPassStr);
-
-ssize_t recvData(int _socked_fd, size_t _recv_data_size, OUT_ARG char** _recv_buff);
 
 #endif /* INCLUDE_SERVER_H_ */

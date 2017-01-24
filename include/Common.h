@@ -43,7 +43,6 @@ char* getFileNameFromPath(const char* file_path);
 
 int countFileHash_md5(const char* full_file_name, OUT_ARG BYTE* file_hash);
 
-int closeSocket(socket_t _socket_d);
 void exitThread(thread_rc_t _exit_arg);
 
 /**

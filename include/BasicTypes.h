@@ -61,11 +61,11 @@ enum __log_msg_type{
 };
 typedef enum __log_msg_type log_msg_type_t;
 
-enum __netmsg_sending_res{
-	SUCCESSFUL = 0,
-	FAIL
+enum __netmsg_stat_code{
+	CORRECT = 0,
+	INCORRECT
 };
-typedef enum __netmsg_sending_res netmsg_sending_res_t;
+typedef enum __netmsg_stat_code netmsg_stat_code_t;
 
 enum __mode_type{
 	MODE_NONE,
@@ -96,7 +96,7 @@ struct __serverConfig{
 typedef struct __serverConfig serverConfig_t;
 
 struct __serverSysInfo{
-	socket_t socketFd;
+	socket_t socket_d;
 	int inputCommsPipeFd;
 	serverConfig_t* conf;
 };
