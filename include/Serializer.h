@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <inttypes.h>
 
 ssize_t serialize_FileInfoMsg(file_info_msg_t _inStruct, const char _delimSymbol, OUT_ARG char** _out_fileInfoMsg);
 

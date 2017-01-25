@@ -16,9 +16,8 @@ ssize_t serialize_FileInfoMsg(file_info_msg_t _inStruct, const char _delimSymbol
 
 	char fileSizeMsgStr[MAX_FILESIZE_CHAR_NUM];
 	memset(fileSizeMsgStr, 0, MAX_FILESIZE_CHAR_NUM);
-#ifdef __linux__
-	sprintf(fileSizeMsgStr, "%lld", _inStruct.fileSize);
-#endif
+	sprintf(fileSizeMsgStr, "%" PRId64, _inStruct.fileSize);
+
 	int fileSizeStr_len = strlen(fileSizeMsgStr);
 
 	ssize_t buffSize = sizeof(char) * MAX_FILESIZE_CHAR_NUM + sizeof(char) * MAX_FILENAME_LEN + 1;
