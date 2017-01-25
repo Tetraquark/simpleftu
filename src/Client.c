@@ -272,8 +272,8 @@ file_size_t sendFile(int _socket, const char* _full_file_name){
 		total_bytes_sended = -1;
 	}
 #elif __linux__
-	file_d = open(_full_file_name, O_RDONLY);
-	if(-1 == file_d){
+	sending_file = open(_full_file_name, O_RDONLY);
+	if(-1 == sending_file){
 		total_bytes_sended = -1;
 	}
 #endif

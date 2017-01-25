@@ -21,7 +21,7 @@ int socket_close(socket_t _socket_d){
 
 ssize_t socket_sendBytes(socket_t _socket_d, const void* _buff, size_t _size){
 	ssize_t bytes_sent = send(_socket_d, _buff, _size, 0);
-	logMsg(__func__, __LINE__, LOG_INFO, "Sent bytes: %d", bytes_sent);
+	//logMsg(__func__, __LINE__, LOG_INFO, "Sent bytes: %d", bytes_sent);
 	return bytes_sent ;
 }
 
@@ -37,7 +37,7 @@ ssize_t socket_recvBytes(socket_t _socket_d, size_t _recv_size, OUT_ARG void* _r
 		total_recved_bytes += bytes_readed;
 	}
 
-	logMsg(__func__, __LINE__, LOG_INFO, "Received bytes: %d", total_recved_bytes);
+	//logMsg(__func__, __LINE__, LOG_INFO, "Received bytes: %d", total_recved_bytes);
 	return total_recved_bytes;
 }
 
