@@ -366,7 +366,7 @@ thread_rc_t startPeerThread(void* _thread_data_strc){
 
 	logMsg(__func__, __LINE__, LOG_INFO, "Received the file info: file size %lld; file name: %s",
 			recv_fileInfo_strc.fileSize, recv_fileInfo_strc.fileName);
-
+/*
 	input_msg_size = 0;
 	// get input file md5 hash message size
 	if(socket_recvBytes(peer_socket_d, sizeof(input_msg_size), (void*)&input_msg_size) == -1){
@@ -395,6 +395,7 @@ thread_rc_t startPeerThread(void* _thread_data_strc){
 	fromHexStrToByteArr(peer_fileHash_md5_str, MD5_BLOCK_SIZE * 2, peer_fileHash_md5);
 	logMsg(__func__, __LINE__, LOG_INFO, "Received hash:\t %s", peer_fileHash_md5_str);
 	free(peer_fileHash_md5_str);
+*/
 
 	// builds full tmp file path
 	size_t tmp_file_fullpath_size = strlen(serv_storage_dir_path) * sizeof(char)
@@ -409,7 +410,7 @@ thread_rc_t startPeerThread(void* _thread_data_strc){
 	strncpy(&tmp_file_fullpath_str[strlen(serv_storage_dir_path)],
 			recv_fileInfo_strc.fileName, strlen(recv_fileInfo_strc.fileName) * sizeof(char));
 
-	logMsg(__func__, __LINE__, LOG_INFO, "Start file transferring");
+	logMsg(__func__, __LINE__, LOG_INFO, "Start file data transferring");
 	BYTE tmp_fileHash_md5[MD5_BLOCK_SIZE];
 	memset(tmp_fileHash_md5, '\0', MD5_BLOCK_SIZE);
 
@@ -427,18 +428,69 @@ thread_rc_t startPeerThread(void* _thread_data_strc){
 	recvTotalBytes = __recvAndSaveFile(peer_socket_d, tmp_file_fullpath_str, recv_fileInfo_strc.fileSize, tmp_fileHash_md5);
 	if(recvTotalBytes == -1){
 		logMsg(__func__, __LINE__, LOG_ERROR, "Error file transferring. Abort peer connection.");
-		free(tmp_file_fullpath_str);
+		status_code = INCORRECT;
+	}
+	else{
+		logMsg(__func__, __LINE__, LOG_INFO, "File data transferring was correct.");
+		status_code = CORRECT;
+	}
+
+	free(tmp_file_fullpath_str);
+
+	// send answer message to peer about file daata transfer
+	if(socket_sendBytes(peer_socket_d, &status_code, sizeof(status_code)) < 0){
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error sending answer message. Abort peer connection.");
 
 		socket_close(peer_socket_d);
 		exitThread(NULL);
 	}
-	free(tmp_file_fullpath_str);
+	if(status_code == INCORRECT){
+		socket_close(peer_socket_d);
+		exitThread(NULL);
+	}
 
 	// convert counted tmp file md5 hash to byte format
 	char* tmp_fileHash_md5_str = (char*) malloc((MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
 	memset(tmp_fileHash_md5_str, '\0', (MD5_BLOCK_SIZE * 2 + 1) * sizeof(char));
 	fromByteArrToHexStr(tmp_fileHash_md5, MD5_BLOCK_SIZE, &tmp_fileHash_md5_str);
 	logMsg(__func__, __LINE__, LOG_INFO, "Counted hash:\t %s", tmp_fileHash_md5_str);
+
+
+/////////////////////////////////////////////
+
+	input_msg_size = 0;
+	// get input file md5 hash message size
+	if(socket_recvBytes(peer_socket_d, sizeof(input_msg_size), (void*)&input_msg_size) == -1){
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error receiving input message size from socket. Abort peer connection.");
+
+		free(tmp_fileHash_md5_str);
+
+		socket_close(peer_socket_d);
+		exitThread(NULL);
+	}
+
+	// TODO: maybe add cmp input_msg_size with MD5_BLOCK_SIZE * 2?
+
+	// get file md5 hash from peer
+	BYTE peer_fileHash_md5[MD5_BLOCK_SIZE];
+	memset(peer_fileHash_md5, '\0', MD5_BLOCK_SIZE * sizeof(BYTE));
+	char* peer_fileHash_md5_str = (char*) malloc(input_msg_size + 1);
+	memset(peer_fileHash_md5_str, '\0', input_msg_size + 1);
+
+	if(socket_recvBytes(peer_socket_d, input_msg_size, peer_fileHash_md5_str) == -1){
+		logMsg(__func__, __LINE__, LOG_ERROR,
+				"Peer file md5 hash message receiving error. Abort peer connection.");
+		free(peer_fileHash_md5_str);
+		free(tmp_fileHash_md5_str);
+
+		socket_close(peer_socket_d);
+		exitThread(NULL);
+	}
+	fromHexStrToByteArr(peer_fileHash_md5_str, MD5_BLOCK_SIZE * 2, peer_fileHash_md5);
+	logMsg(__func__, __LINE__, LOG_INFO, "Received hash:\t %s", peer_fileHash_md5_str);
+	free(peer_fileHash_md5_str);
+	free(tmp_fileHash_md5_str);
+/////////////////////////////////////////////
 
 	// compare received hash and counted hash of downloaded file
 	if(cmpHash_md5(peer_fileHash_md5, tmp_fileHash_md5)){
@@ -457,12 +509,9 @@ thread_rc_t startPeerThread(void* _thread_data_strc){
 	if(socket_sendBytes(peer_socket_d, &status_code, sizeof(status_code)) < 0){
 		logMsg(__func__, __LINE__, LOG_ERROR, "Error sending answer message. Abort peer connection.");
 
-		free(tmp_fileHash_md5_str);
-
 		socket_close(peer_socket_d);
 		exitThread(NULL);
 	}
-	free(tmp_fileHash_md5_str);
 
 	logMsg(__func__, __LINE__, LOG_INFO, "Transfer is %s. Close connection with peer.",
 			status_code == INCORRECT ? "unsuccessful" : "successful");

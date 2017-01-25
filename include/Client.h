@@ -30,6 +30,6 @@
 
 int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_FILE_PATH_LEN + 1], char* _serv_pass);
 
-file_size_t sendFile(int _socket, const char* _full_file_name);
+file_size_t sendFile(int _socket, const char* _full_file_name, OUT_ARG BYTE* _file_hash);
 
 #endif /* INCLUDE_CLIENT_H_ */

@@ -17,10 +17,12 @@
  * 4) client sends the file info message size: msg_size_t
  * 5) client sends the file info struct (serialized cstring message): file_info_msg_t
  * 6) client receives result of deserialization file info message: netmsg_stat_code_t
+ *
+ * 10) client sends file: loop of sending data packet size and sending data packet
+ * 9) client receives result sending file data message: netmsg_stat_code_t
+ *
  * 7) client sends the file md5 hash message size: msg_size_t
  * 8) client sends the file md5 hash: char[MD5_BLOCK_SIZE * 2]
- * 9) client receives result sending file md5 hash message: netmsg_stat_code_t
- * 10) client sends file: loop of sending data packet size and sending data packet
  * 11) client receives result of md5 hashes comparing and transfer result message: netmsg_stat_code_t
  */
 int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_FILE_PATH_LEN + 1], char* _serv_pass){
@@ -147,7 +149,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	else{
 		logMsg(__func__, __LINE__, LOG_INFO, "The file info was sent.");
 	}
-
+/*
 	// count the file md5 hash
 	logMsg(__func__, __LINE__, LOG_INFO, "Counting the sending file md5 hash.");
 	BYTE hashArr[MD5_BLOCK_SIZE];
@@ -204,14 +206,16 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 		return EXIT_FAILURE;
 	}
 	logMsg(__func__, __LINE__, LOG_INFO, "File md5 hash was sent.");
+*/
+
+	BYTE hashArr[MD5_BLOCK_SIZE];
+	memset(hashArr, '\0', MD5_BLOCK_SIZE * sizeof(BYTE));
 
 	// send the file
-	logMsg(__func__, __LINE__, LOG_INFO, "Start file transferring.");
-	file_size_t bytes_sended = sendFile(socketDescr, _sendingfile_path);
+	logMsg(__func__, __LINE__, LOG_INFO, "Start file data transferring.");
+	file_size_t bytes_sended = sendFile(socketDescr, _sendingfile_path, hashArr);
 	if(bytes_sended == -1){
 		logMsg(__func__, __LINE__, LOG_ERROR, "Error sending file. Exit.");
-
-		//free(hashArr_str);
 
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
@@ -221,51 +225,95 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	if(bytes_sended != file_size){
 		logMsg(__func__, __LINE__, LOG_ERROR, "Different sent data size and readed file size. Abort connection.");
 
-		//free(hashArr_str);
-
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
 	}
 
-	// recv result of md5 hashes comparing and transfer result message
+	// recv result of file transfer  OLD://md5 hashes comparing and transfer result message
 	if(socket_recvBytes(socketDescr, sizeof(status_code), &status_code) == -1){
 		logMsg(__func__, __LINE__, LOG_ERROR, "Error receiving answer message from server. Abort connection.");
-
-		//free(hashArr_str);
 
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
 	}
 	if(status_code == INCORRECT){
-		logMsg(__func__, __LINE__, LOG_ERROR, "Error transferring file. Abort connection.");
-
-		//free(hashArr_str);
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error transferring the file data. Abort connection.");
 
 		socket_close(socketDescr);
-		return EXIT_SUCCESS;
+		return EXIT_FAILURE;
 	}
-	logMsg(__func__, __LINE__, LOG_INFO, "File successfully transferred.");
+	logMsg(__func__, __LINE__, LOG_INFO, "The file data successfully transferred. Wait md5 hash comparing.");
 
-	//free(hashArr_str);
+
+	outputMsgSize = (MD5_BLOCK_SIZE * 2) * sizeof(char);
+	char* hashArr_str = (char*) malloc(outputMsgSize);
+	memset(hashArr_str, '\0', outputMsgSize);
+	fromByteArrToHexStr(hashArr, MD5_BLOCK_SIZE, &hashArr_str);
+
+	// send the file md5 hash message size
+	if(socket_sendBytes(socketDescr, &outputMsgSize, sizeof(outputMsgSize)) < 0){
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error in sending message size. Abort connection.");
+
+		free(hashArr_str);
+
+		socket_close(socketDescr);
+		return EXIT_FAILURE;
+	}
+
+	// send the file md5 hash
+	logMsg(__func__, __LINE__, LOG_INFO, "Try to send the file md5 hash: %s", hashArr_str);
+	if(socket_sendBytes(socketDescr, hashArr_str, outputMsgSize) < 0){
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error in sending file md5 hash to server. Abort connection.");
+
+		free(hashArr_str);
+
+		socket_close(socketDescr);
+		return EXIT_FAILURE;
+	}
+
+	// recv files md5 hash comparing result
+	if(socket_recvBytes(socketDescr, sizeof(status_code), &status_code) == -1){
+		logMsg(__func__, __LINE__, LOG_ERROR, "Error receiving answer message from server. Abort connection.");
+
+		free(hashArr_str);
+
+		socket_close(socketDescr);
+		return EXIT_FAILURE;
+	}
+	if(status_code == INCORRECT){
+		logMsg(__func__, __LINE__, LOG_ERROR, "Different files md5 hashes. Transfer was incorrect.");
+
+		free(hashArr_str);
+
+		socket_close(socketDescr);
+		return EXIT_FAILURE;
+	}
+	logMsg(__func__, __LINE__, LOG_INFO, "Same files md5 hashes. Transfer was correct.");
+
+	free(hashArr_str);
 
 #ifdef _WIN32
-	shutdown(socketDescr, SD_SEND);
+	shutdown(socketDescr, SD_BOTH);
 #elif __linux__
 	shutdown(socketDescr, SHUT_WR);
 #endif
-	close(socketDescr);
+	socket_close(socketDescr);
 	return EXIT_SUCCESS;
 }
 
-file_size_t sendFile(int _socket, const char* _full_file_name){
+file_size_t sendFile(int _socket, const char* _full_file_name, OUT_ARG BYTE* _file_hash){
 	file_t sending_file = 0;
 	file_size_t total_bytes_sended = 0;
 	file_size_t bytes_sended = 0;
 	char* fd_buff = NULL;
 	file_size_t bytes_readed = 0;
+	MD5_CTX ctx;
 
 	fd_buff = (char*) malloc((SENDING_FILE_PACKET_SIZE + 1) * sizeof(char));
 	memset(fd_buff, '\0', (SENDING_FILE_PACKET_SIZE + 1) * sizeof(char));
+
+	// init md5 hasher
+	md5_init(&ctx);
 
 #ifdef _WIN32
 	sending_file = fopen(_full_file_name, "rb");
@@ -302,6 +350,8 @@ file_size_t sendFile(int _socket, const char* _full_file_name){
 			}
 			*/
 
+			md5_update(&ctx, fd_buff, bytes_readed);
+
 			if( (bytes_sended = socket_sendBytes(_socket, fd_buff, bytes_readed)) < 0){
 				logMsg(__func__, __LINE__, LOG_ERROR, "Error send file data block to server. Abort connection.");
 
@@ -320,6 +370,8 @@ file_size_t sendFile(int _socket, const char* _full_file_name){
 		}
 #endif
 	}
+
+	md5_final(&ctx, _file_hash);
 
 #ifdef _WIN32
 	fclose(sending_file);
