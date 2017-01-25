@@ -21,7 +21,7 @@ int config_loadFromFile(char* _conf_file_path, OUT_ARG serverConfig_t* _serv_con
 	 * Read config from file into libconfig struct.
 	 */
     if (!config_read_file(&cfg, _conf_file_path)){
-    	logMsg(__func__, __LINE__, ERROR, "%s : <%s:%d>", config_error_text(&cfg), config_error_file(&cfg), config_error_line(&cfg));
+    	logMsg(__func__, __LINE__, LOG_ERROR, "%s : <%s:%d>", config_error_text(&cfg), config_error_file(&cfg), config_error_line(&cfg));
         config_destroy(&cfg);
         return EXIT_FAILURE;
     }
@@ -32,7 +32,7 @@ int config_loadFromFile(char* _conf_file_path, OUT_ARG serverConfig_t* _serv_con
     int port = 0;
     rc = config_lookup_int(&cfg, SFTU_CONFIG_FIELDNAME_PORT, &port);
     if(rc == CONFIG_FALSE){
-    	logMsg(__func__, __LINE__, ERROR, "Error parsing config field %s", SFTU_CONFIG_FIELDNAME_PORT);
+    	logMsg(__func__, __LINE__, LOG_ERROR, "Error parsing config field %s", SFTU_CONFIG_FIELDNAME_PORT);
         config_destroy(&cfg);
         return EXIT_FAILURE;
     }
@@ -44,7 +44,7 @@ int config_loadFromFile(char* _conf_file_path, OUT_ARG serverConfig_t* _serv_con
     char* storage_folder;
     rc = config_lookup_string(&cfg, SFTU_CONFIG_FIELDNAME_STORAGE_DIR_PATH, &storage_folder);
     if(rc == CONFIG_FALSE){
-    	logMsg(__func__, __LINE__, ERROR, "Error parsing config field %s", SFTU_CONFIG_FIELDNAME_STORAGE_DIR_PATH);
+    	logMsg(__func__, __LINE__, LOG_ERROR, "Error parsing config field %s", SFTU_CONFIG_FIELDNAME_STORAGE_DIR_PATH);
         config_destroy(&cfg);
         return EXIT_FAILURE;
     }
@@ -58,7 +58,7 @@ int config_loadFromFile(char* _conf_file_path, OUT_ARG serverConfig_t* _serv_con
     char* password;
     rc = config_lookup_string(&cfg, SFTU_CONFIG_FIELDNAME_PASSWORD, &password);
     if(rc == CONFIG_FALSE){
-    	logMsg(__func__, __LINE__, ERROR, "Error parsing config field %s", SFTU_CONFIG_FIELDNAME_PASSWORD);
+    	logMsg(__func__, __LINE__, LOG_ERROR, "Error parsing config field %s", SFTU_CONFIG_FIELDNAME_PASSWORD);
         config_destroy(&cfg);
         return EXIT_FAILURE;
     }
