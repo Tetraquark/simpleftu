@@ -17,12 +17,10 @@
  * 4) client sends the file info message size: msg_size_t
  * 5) client sends the file info struct (serialized cstring message): file_info_msg_t
  * 6) client receives result of deserialization file info message: netmsg_stat_code_t
- *
- * 10) client sends file: loop of sending data packet size and sending data packet
- * 9) client receives result sending file data message: netmsg_stat_code_t
- *
- * 7) client sends the file md5 hash message size: msg_size_t
- * 8) client sends the file md5 hash: char[MD5_BLOCK_SIZE * 2]
+ * 7) client sends file: loop of sending data packet size and sending data packet
+ * 8) client receives result sending file data message: netmsg_stat_code_t
+ * 9) client sends the file md5 hash message size: msg_size_t
+ * 10) client sends the file md5 hash: char[MD5_BLOCK_SIZE * 2]
  * 11) client receives result of md5 hashes comparing and transfer result message: netmsg_stat_code_t
  */
 int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_FILE_PATH_LEN + 1], char* _serv_pass){
@@ -132,7 +130,6 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	}
 	free(fileinfo_msg_str);
 
-
 	// recv deserialization file info message result from server
 	if(socket_recvBytes(socketDescr, sizeof(status_code), &status_code) == -1){
 		logMsg(__func__, __LINE__, LOG_ERROR, "Error receiving answer message from server. Abort connection.");
@@ -149,64 +146,6 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	else{
 		logMsg(__func__, __LINE__, LOG_INFO, "The file info was sent.");
 	}
-/*
-	// count the file md5 hash
-	logMsg(__func__, __LINE__, LOG_INFO, "Counting the sending file md5 hash.");
-	BYTE hashArr[MD5_BLOCK_SIZE];
-	memset(hashArr, '\0', MD5_BLOCK_SIZE * sizeof(BYTE));
-	if(countFileHash_md5(_sendingfile_path, hashArr)){
-		logMsg(__func__, __LINE__, LOG_ERROR, "Error in sending file info to server. Abort connection.");
-
-		socket_close(socketDescr);
-		return EXIT_FAILURE;
-	}
-
-	outputMsgSize = (MD5_BLOCK_SIZE * 2) * sizeof(char);
-	char* hashArr_str = (char*) malloc(outputMsgSize);
-	memset(hashArr_str, '\0', outputMsgSize);
-	fromByteArrToHexStr(hashArr, MD5_BLOCK_SIZE, &hashArr_str);
-
-	// send the file md5 hash message size
-	if(socket_sendBytes(socketDescr, &outputMsgSize, sizeof(outputMsgSize)) < 0){
-		logMsg(__func__, __LINE__, LOG_ERROR, "Error in sending message size. Abort connection.");
-
-		// TODO: free mem and close descriptors
-		socket_close(socketDescr);
-		return EXIT_FAILURE;
-	}
-
-	// send the file md5 hash
-	logMsg(__func__, __LINE__, LOG_INFO, "Try to send the file md5 hash: %s", hashArr_str);
-	if(socket_sendBytes(socketDescr, hashArr_str, outputMsgSize) < 0){
-		logMsg(__func__, __LINE__, LOG_ERROR, "Error in sending file md5 hash to server. Abort connection.");
-
-		free(hashArr_str);
-
-		socket_close(socketDescr);
-		return EXIT_FAILURE;
-	}
-	// TODO: SEGFAULT ???
-	//free(hashArr_str);
-
-	// recv file md5 hash sending result
-	if(socket_recvBytes(socketDescr, sizeof(status_code), &status_code) == -1){
-		logMsg(__func__, __LINE__, LOG_ERROR, "Error receiving answer message from server. Abort connection.");
-
-		//free(hashArr_str);
-
-		socket_close(socketDescr);
-		return EXIT_FAILURE;
-	}
-	if(status_code == INCORRECT){
-		logMsg(__func__, __LINE__, LOG_ERROR, "Error sending file md5 hash. Abort connection.");
-
-		//free(hashArr_str);
-
-		socket_close(socketDescr);
-		return EXIT_FAILURE;
-	}
-	logMsg(__func__, __LINE__, LOG_INFO, "File md5 hash was sent.");
-*/
 
 	BYTE hashArr[MD5_BLOCK_SIZE];
 	memset(hashArr, '\0', MD5_BLOCK_SIZE * sizeof(BYTE));
@@ -243,7 +182,6 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 		return EXIT_FAILURE;
 	}
 	logMsg(__func__, __LINE__, LOG_INFO, "The file data successfully transferred. Wait md5 hash comparing.");
-
 
 	outputMsgSize = (MD5_BLOCK_SIZE * 2) * sizeof(char);
 	char* hashArr_str = (char*) malloc(outputMsgSize);
@@ -290,12 +228,13 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	}
 	logMsg(__func__, __LINE__, LOG_INFO, "Same files md5 hashes. Transfer was correct.");
 
-	free(hashArr_str);
+	// TODO: SEGFAULT???
+	//free(hashArr_str);
 
 #ifdef _WIN32
-	shutdown(socketDescr, SD_BOTH);
+	//shutdown(socketDescr, SD_BOTH);
 #elif __linux__
-	shutdown(socketDescr, SHUT_WR);
+	//shutdown(socketDescr, SHUT_WR);
 #endif
 	socket_close(socketDescr);
 	return EXIT_SUCCESS;
