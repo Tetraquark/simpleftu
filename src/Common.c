@@ -134,6 +134,7 @@ int countFileHash_md5(const char* _full_file_name, OUT_ARG BYTE* _file_hash){
 
 	// read file bytes block and update md5 hash-counter
 	while( ((bytes_readed = read(file_d, data_buff, SENDING_FILE_PACKET_SIZE * sizeof(char))) > 0) ){
+		logMsg(__func__, __LINE__, LOG_INFO, "md5 bytes_readed: %d", bytes_readed);
 		md5_update(&ctx, data_buff, bytes_readed);
 		memset(data_buff, '\0', (SENDING_FILE_PACKET_SIZE) * sizeof(char));
 	}

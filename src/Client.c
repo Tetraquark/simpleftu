@@ -183,13 +183,14 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
 	}
+	// TODO: SEGFAULT ???
 	//free(hashArr_str);
 
 	// recv file md5 hash sending result
 	if(socket_recvBytes(socketDescr, sizeof(status_code), &status_code) == -1){
 		logMsg(__func__, __LINE__, LOG_ERROR, "Error receiving answer message from server. Abort connection.");
 
-		free(hashArr_str);
+		//free(hashArr_str);
 
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
@@ -197,7 +198,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	if(status_code == INCORRECT){
 		logMsg(__func__, __LINE__, LOG_ERROR, "Error sending file md5 hash. Abort connection.");
 
-		free(hashArr_str);
+		//free(hashArr_str);
 
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
@@ -210,7 +211,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	if(bytes_sended == -1){
 		logMsg(__func__, __LINE__, LOG_ERROR, "Error sending file. Exit.");
 
-		free(hashArr_str);
+		//free(hashArr_str);
 
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
@@ -220,7 +221,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	if(bytes_sended != file_size){
 		logMsg(__func__, __LINE__, LOG_ERROR, "Different sent data size and readed file size. Abort connection.");
 
-		free(hashArr_str);
+		//free(hashArr_str);
 
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
@@ -230,7 +231,7 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	if(socket_recvBytes(socketDescr, sizeof(status_code), &status_code) == -1){
 		logMsg(__func__, __LINE__, LOG_ERROR, "Error receiving answer message from server. Abort connection.");
 
-		free(hashArr_str);
+		//free(hashArr_str);
 
 		socket_close(socketDescr);
 		return EXIT_FAILURE;
@@ -238,14 +239,14 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 	if(status_code == INCORRECT){
 		logMsg(__func__, __LINE__, LOG_ERROR, "Error transferring file. Abort connection.");
 
-		free(hashArr_str);
+		//free(hashArr_str);
 
 		socket_close(socketDescr);
 		return EXIT_SUCCESS;
 	}
 	logMsg(__func__, __LINE__, LOG_INFO, "File successfully transferred.");
 
-	free(hashArr_str);
+	//free(hashArr_str);
 
 #ifdef _WIN32
 	shutdown(socketDescr, SD_SEND);
@@ -279,30 +280,31 @@ file_size_t sendFile(int _socket, const char* _full_file_name){
 #endif
 	else{
 #ifdef _WIN32
-		while(( SENDING_FILE_PACKET_SIZE == (bytes_readed = fread(fd_buff, sizeof(char), SENDING_FILE_PACKET_SIZE, sending_file)) )){
-#elif __linux__
-		while( ((bytes_readed = read(sending_file, fd_buff, SENDING_FILE_PACKET_SIZE * sizeof(char))) > 0) ){
-#endif
-			if(socket_sendBytes(_socket, &bytes_readed, sizeof(bytes_readed)) < 0){
-				logMsg(__func__, __LINE__, LOG_ERROR, "Data packet send error. Abort connection.");
+		bytes_readed = fread(fd_buff, sizeof(char), SENDING_FILE_PACKET_SIZE, sending_file);
+		do{
+		//while(( SENDING_FILE_PACKET_SIZE == (bytes_readed = fread(fd_buff, sizeof(char), SENDING_FILE_PACKET_SIZE, sending_file))
+		//		|| !feof(sending_file) )){
+			if(bytes_readed != 0 && SENDING_FILE_PACKET_SIZE != bytes_readed && !feof(sending_file)){
+				logMsg(__func__, __LINE__, LOG_ERROR, "Error read file data block from file. Abort connection.");
 
-#ifdef _WIN32
-				fclose(sending_file);
-#elif __linux__
-				close(sending_file);
-#endif
 				total_bytes_sended = -1;
 				break;
 			}
+#elif __linux__
+		while( ((bytes_readed = read(sending_file, fd_buff, SENDING_FILE_PACKET_SIZE * sizeof(char))) > 0) ){
+#endif
+			/*
+			if(socket_sendBytes(_socket, &bytes_readed, sizeof(bytes_readed)) < 0){
+				logMsg(__func__, __LINE__, LOG_ERROR, "Data packet send error. Abort connection.");
+
+				total_bytes_sended = -1;
+				break;
+			}
+			*/
 
 			if( (bytes_sended = socket_sendBytes(_socket, fd_buff, bytes_readed)) < 0){
 				logMsg(__func__, __LINE__, LOG_ERROR, "Error send file data block to server. Abort connection.");
 
-#ifdef _WIN32
-				fclose(sending_file);
-#elif __linux__
-				close(sending_file);
-#endif
 				total_bytes_sended = -1;
 				break;
 			}
@@ -311,7 +313,12 @@ file_size_t sendFile(int _socket, const char* _full_file_name){
 
 			bytes_sended = 0;
 			memset(fd_buff, '\0', SENDING_FILE_PACKET_SIZE);
+#ifdef _WIN32
+			bytes_readed = fread(fd_buff, sizeof(char), SENDING_FILE_PACKET_SIZE, sending_file);
+		} while(bytes_readed != 0);
+#else
 		}
+#endif
 	}
 
 #ifdef _WIN32

@@ -161,6 +161,7 @@ static file_size_t __recvAndSaveFile(int _socket_fd, char* _tmp_file_fullpath, f
 	MD5_CTX ctx;
 	ssize_t recved_packet_size = 0;
 	size_t input_packet_size = 0;
+	size_t wait_in_packet_size = 0;
 	char* input_dataBuff = NULL;
 
 	input_dataBuff = (char*) malloc(SENDING_FILE_PACKET_SIZE + 1 * sizeof(char));
@@ -191,14 +192,19 @@ static file_size_t __recvAndSaveFile(int _socket_fd, char* _tmp_file_fullpath, f
 	md5_init(&ctx);
 
 	while(recv_total_data_size < full_remain_fileSize){
-
+/*
 		if(socket_recvBytes(_socket_fd, sizeof(input_packet_size), (void*)&input_packet_size) == -1){
 			logMsg(__func__, __LINE__, LOG_ERROR, "Error receiving input data packet size from socket. Abort peer connection.");
 			recv_total_data_size = -1;
 			break;
 		}
+*/
+		if(full_remain_fileSize - recv_total_data_size < SENDING_FILE_PACKET_SIZE)
+			wait_in_packet_size = full_remain_fileSize - recv_total_data_size;
+		else
+			wait_in_packet_size = SENDING_FILE_PACKET_SIZE;
 
-		if((recved_packet_size = socket_recvBytes(_socket_fd, input_packet_size, (void*) input_dataBuff)) <= 0){
+		if((recved_packet_size = socket_recvBytes(_socket_fd, wait_in_packet_size, (void*) input_dataBuff)) <= 0){
 			logMsg(__func__, __LINE__, LOG_ERROR,
 					"Error receiving input TCP message. Abort peer connection.");
 			recv_total_data_size = -1;
