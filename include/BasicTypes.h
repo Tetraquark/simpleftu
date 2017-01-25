@@ -22,6 +22,7 @@
 #include "BasicConstants.h"
 
 typedef int64_t file_size_t;
+typedef int32_t msg_size_t;
 
 #ifdef _WIN32
 typedef SOCKET socket_t;

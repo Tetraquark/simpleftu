@@ -11,13 +11,13 @@
 /**
  * File transfer protocol:
  * After connection client send:
- * 1) client sends password message size: size_t
+ * 1) client sends password message size: msg_size_t
  * 2) client sends password: char[MAX_PASS_LEN]
  * 3) client receives result of password checking on server: netmsg_stat_code_t
- * 4) client sends the file info message size: size_t
+ * 4) client sends the file info message size: msg_size_t
  * 5) client sends the file info struct (serialized cstring message): file_info_msg_t
  * 6) client receives result of deserialization file info message: netmsg_stat_code_t
- * 7) client sends the file md5 hash message size: size_t
+ * 7) client sends the file md5 hash message size: msg_size_t
  * 8) client sends the file md5 hash: char[MD5_BLOCK_SIZE * 2]
  * 9) client receives result sending file md5 hash message: netmsg_stat_code_t
  * 10) client sends file: loop of sending data packet size and sending data packet
@@ -26,7 +26,7 @@
 int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_FILE_PATH_LEN + 1], char* _serv_pass){
 	struct sockaddr_in tcpsocket_addr_strct;
 	socket_t socketDescr = 0;
-	size_t outputMsgSize = 0;
+	msg_size_t outputMsgSize = 0;
 	netmsg_stat_code_t status_code;
 
 	// init tcp socket
