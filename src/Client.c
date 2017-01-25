@@ -223,9 +223,12 @@ int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_
 		return EXIT_SUCCESS;
 	}
 	logMsg(__func__, __LINE__, LOG_INFO, "File successfully transferred.");
-
+#ifdef _WIN32
+	shutdown(socketDescr, SD_SEND);
+#elif __linux__
 	shutdown(socketDescr, SHUT_WR);
-	//close(socketDescr);
+#endif
+	close(socketDescr);
 	return EXIT_SUCCESS;
 }
 

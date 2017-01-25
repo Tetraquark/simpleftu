@@ -44,7 +44,7 @@ typedef pthread_t thread_t;
  * Type for return value from threads.
  */
 #ifdef _WIN32
-typedef DWORD thread_rc_t;
+typedef LPTHREAD_START_ROUTINE thread_rc_t;
 #elif __linux__
 typedef void* thread_rc_t;
 #else

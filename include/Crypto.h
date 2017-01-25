@@ -9,14 +9,14 @@
 #ifndef INCLUDE_CRYPTO_H_
 #define INCLUDE_CRYPTO_H_
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
 #include "../BuildConfig.h"
 #include "BasicConstants.h"
 #include "BasicTypes.h"
 #include "md5.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 /**
  * Convert string in hexadecimal format into array of bytes.

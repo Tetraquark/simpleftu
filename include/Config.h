@@ -9,15 +9,15 @@
 #ifndef INCLUDE_CONFIG_H_
 #define INCLUDE_CONFIG_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <libconfig.h>
-
 #include "../BuildConfig.h"
 #include "BasicTypes.h"
 #include "BasicConstants.h"
 #include "Common.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <libconfig.h>
 
 #define SFTU_CONFIG_FIELDNAME_PORT "port"
 #define SFTU_CONFIG_FIELDNAME_STORAGE_DIR_PATH "storage-path"

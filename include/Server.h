@@ -9,20 +9,6 @@
 #ifndef INCLUDE_SERVER_H_
 #define INCLUDE_SERVER_H_
 
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <string.h>
-#include <fcntl.h>
-
-#ifdef __linux__
-#include <sys/stat.h>
-#include <pthread.h>
-#elif _WIN32
-#include <windows.h>
-#include <ws2tcpip.h>
-#endif
-
 #include "../BuildConfig.h"
 #include "BasicTypes.h"
 #include "BasicConstants.h"
@@ -31,6 +17,19 @@
 #include "Network.h"
 #include "Serializer.h"
 #include "Crypto.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
+#ifdef __linux__
+#include <sys/stat.h>
+#include <pthread.h>
+#elif _WIN32
+#include <windows.h>
+#include <ws2tcpip.h>
+#endif
 
 int startServTCPListener(serverConfig_t* _serv_conf_ptr);
 

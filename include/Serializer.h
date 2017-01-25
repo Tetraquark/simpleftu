@@ -9,15 +9,16 @@
 #ifndef INCLUDE_SERIALIZER_H_
 #define INCLUDE_SERIALIZER_H_
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-
+#include "../BuildConfig.h"
 #include "BasicConstants.h"
 #include "BasicTypes.h"
 #include "Crypto.h"
 #include "Common.h"
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 ssize_t serialize_FileInfoMsg(file_info_msg_t _inStruct, const char _delimSymbol, OUT_ARG char** _out_fileInfoMsg);
 

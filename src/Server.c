@@ -14,25 +14,36 @@ int startServTCPListener(serverConfig_t* _serv_conf_ptr){
 	struct sockaddr_in serv_sockaddr;
 	socket_t serv_socket_d = 0;
 	int listenPort = _serv_conf_ptr->port;
+#ifdef __linux__
 	int serv_commands_pipes[2];
+#endif
 	serverSysInfo_t serv_threadInfo;
 	thread_t serv_thread = 0;
+#ifdef _WIN32
+	HANDLE thread_start_rc;
+#elif __linux__
 	int thread_start_rc = 0;
+#endif
 
+#ifdef __linux__
 	if(pipe(serv_commands_pipes) == -1){
 		logMsg(__func__, __LINE__, LOG_ERROR, "Error in pipes opening. Abort.");
 		return EXIT_FAILURE;
 	}
+#endif
 	// create TCP listener socket
 	if(socket_createServTCP(listenPort, &serv_sockaddr, &serv_socket_d)){
 		logMsg(__func__, __LINE__, LOG_ERROR, "Error in creating server TCP socket. Abort.");
-
+#ifdef __linux__
 		for(int i = 0; i < 2; i++)
 			close(serv_commands_pipes[i]);
+#endif
 		return EXIT_FAILURE;
 	}
 
+#ifdef __linux__
 	serv_threadInfo.inputCommsPipeFd = serv_commands_pipes[1];
+#endif
 	serv_threadInfo.socket_d = serv_socket_d;
 	serv_threadInfo.conf = _serv_conf_ptr;
 
@@ -44,27 +55,33 @@ int startServTCPListener(serverConfig_t* _serv_conf_ptr){
 	thread_start_rc = pthread_create(&serv_thread, NULL, startListenTCPSocket, (void*) &serv_threadInfo);
 #endif
 
-	if( thread_start_rc ){
+#ifdef _WIN32
+	if( NULL == thread_start_rc ){
+#elif __linux__
+	if( 0 != thread_start_rc ){
+#endif
 		// thread creating error
 		logMsg(__func__, __LINE__, LOG_ERROR, "Error in start \"startListenTCPSocket\" pthread. Abort.");
 
-		//TODO: close socket!
+		socket_close(serv_socket_d);
 
+#ifdef __linux__
 		// close commands pipes
 		for(int i = 0; i < 2; i++)
 			close(serv_commands_pipes[i]);
+#endif
 		return EXIT_FAILURE;
 	}
 	else{
+#ifdef __linux__
 		// if pthread creating was successful
 		close(serv_commands_pipes[1]);
-
+#endif
 		logMsg(__func__, __LINE__, LOG_INFO, "\"startListenTCPSocket\" pthread started successful. Join pthread.");
 		joinThread_inf(serv_thread);
 	}
 
-	//TODO: close socket!
-
+	socket_close(serv_socket_d);
 	return EXIT_SUCCESS;
 }
 
@@ -81,6 +98,11 @@ thread_rc_t startListenTCPSocket(void* _thread_data_strc){
 
 	thread_t connected_peersArr[10];		//TODO: hardcoded number of peers!
 	int connected_peersNum = 0;
+#ifdef _WIN32
+	HANDLE thread_start_rc = 0;
+#elif __linux__
+	int thread_start_rc = 0;
+#endif
 
 	listen(server_info->socket_d, 1);		//TODO: hardcoded nuber of backlog!
 
@@ -102,7 +124,18 @@ thread_rc_t startListenTCPSocket(void* _thread_data_strc){
 			serverSysInfo_t peerInfo;
 			peerInfo.conf = server_info->conf;
 			peerInfo.socket_d = inputClientFd;
-			if( pthread_create(&(connected_peersArr[connected_peersNum]), NULL, startPeerThread, (void*) &peerInfo) ){
+#ifdef _WIN32
+	connected_peersArr[connected_peersNum] = CreateThread(NULL, 0, startPeerThread, &peerInfo, 0, NULL);
+	thread_start_rc = connected_peersArr[connected_peersNum];
+#elif __linux__
+	thread_start_rc = pthread_create(&(connected_peersArr[connected_peersNum]), NULL, startPeerThread, (void*) &peerInfo);
+#endif
+
+#ifdef _WIN32
+			if( NULL == thread_start_rc ){
+#elif __linux__
+			if( 0 != thread_start_rc ){
+#endif
 				// pthread creating error
 				logMsg(__func__, __LINE__, LOG_ERROR, "Error in creating peer pthread.");
 
@@ -114,7 +147,6 @@ thread_rc_t startListenTCPSocket(void* _thread_data_strc){
 				connected_peersNum++;
 				// if pthread creating was successful
 			}
-
 		}
 	}
 

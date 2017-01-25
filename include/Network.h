@@ -9,11 +9,14 @@
 #ifndef INCLUDE_NETWORK_H_
 #define INCLUDE_NETWORK_H_
 
+#include "../BuildConfig.h"
+#include "BasicTypes.h"
+#include "BasicConstants.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-
 #ifdef _WIN32
 #include <windows.h>
 #include <winsock.h>
@@ -22,10 +25,6 @@
 #include <arpa/inet.h>
 #else
 #endif
-
-#include "../BuildConfig.h"
-#include "BasicTypes.h"
-#include "BasicConstants.h"
 
 int socket_close(socket_t _socket_d);
 

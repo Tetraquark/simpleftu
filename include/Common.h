@@ -9,13 +9,17 @@
 #ifndef INCLUDE_COMMON_H_
 #define INCLUDE_COMMON_H_
 
+#include "../BuildConfig.h"
+#include "BasicConstants.h"
+#include "BasicTypes.h"
+#include "md5.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
-
 #ifdef __linux__
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -24,11 +28,6 @@
 #include <windows.h>
 #include <inttypes.h>
 #endif
-
-#include "../BuildConfig.h"
-#include "BasicConstants.h"
-#include "BasicTypes.h"
-#include "md5.h"
 
 #ifdef DEBUG
 void DEBUG_printlnStdoutMsg(const char* _func_name, const int _line_number, log_msg_type_t _msg_type, const char* _debug_msg);

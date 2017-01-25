@@ -275,6 +275,7 @@ int main(int argc, char** argv){
 		goto __exit_1;
 	}
 
+#ifdef __linux__
 	if(appMode == MODE_DAEMON){
 		daemon_pid = fork();
 		if(daemon_pid == -1){
@@ -301,6 +302,7 @@ int main(int argc, char** argv){
 #endif
 		}
 	}
+#endif
 	else if(appMode == MODE_CLIENT){
 		logMsg(__func__, __LINE__, LOG_INFO, "Run Client mode. Connect to: %s:%d; Send file: %s", serverAddr, serverPort, sendFilePath);
 

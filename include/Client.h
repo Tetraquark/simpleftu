@@ -9,6 +9,14 @@
 #ifndef INCLUDE_CLIENT_H_
 #define INCLUDE_CLIENT_H_
 
+#include "../BuildConfig.h"
+#include "BasicTypes.h"
+#include "BasicConstants.h"
+#include "Network.h"
+#include "Common.h"
+#include "md5.h"
+#include "Serializer.h"
+
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -18,14 +26,6 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #endif
-
-#include "../BuildConfig.h"
-#include "BasicTypes.h"
-#include "BasicConstants.h"
-#include "Network.h"
-#include "Common.h"
-#include "md5.h"
-#include "Serializer.h"
 
 int startClient(char* _serv_ip, int _serv_port, char _sendingfile_path[MAX_FULL_FILE_PATH_LEN + 1], char* _serv_pass);
 

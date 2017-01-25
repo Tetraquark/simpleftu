@@ -37,11 +37,11 @@
 #define _WIN32_WINNT WINVER
 // Windows Server 2003 with SP1, Windows XP with SP2
 #elif defined(WINVER) && WINVER == 0x0502
-#define WINVER 0x0601
+#define WINVER 0x0502
 #define _WIN32_WINNT WINVER
 // Windows Server 2003 with SP1, Windows XP with SP2
 #elif defined(WINVER) && WINVER == 0x0501
-#define WINVER 0x0601
+#define WINVER 0x0501
 #define _WIN32_WINNT WINVER
 #endif
 #endif	/* end #ifdef _WIN32 */
