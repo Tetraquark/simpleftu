@@ -125,10 +125,10 @@ thread_rc_t startListenTCPSocket(void* _thread_data_strc){
 			peerInfo.conf = server_info->conf;
 			peerInfo.socket_d = inputClientFd;
 #ifdef _WIN32
-	connected_peersArr[connected_peersNum] = CreateThread(NULL, 0, startPeerThread, &peerInfo, 0, NULL);
-	thread_start_rc = connected_peersArr[connected_peersNum];
+			connected_peersArr[connected_peersNum] = CreateThread(NULL, 0, startPeerThread, &peerInfo, 0, NULL);
+			thread_start_rc = connected_peersArr[connected_peersNum];
 #elif __linux__
-	thread_start_rc = pthread_create(&(connected_peersArr[connected_peersNum]), NULL, startPeerThread, (void*) &peerInfo);
+			thread_start_rc = pthread_create(&(connected_peersArr[connected_peersNum]), NULL, startPeerThread, (void*) &peerInfo);
 #endif
 
 #ifdef _WIN32

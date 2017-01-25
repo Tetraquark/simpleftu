@@ -40,11 +40,17 @@ ssize_t socket_recvBytes(socket_t _socket_d, size_t _recv_size, OUT_ARG void* _r
 
 int socket_createServTCP(int _port, OUT_ARG struct sockaddr_in* _tcpsocket_addr, OUT_ARG socket_t* _socket_desc){
 
+#ifdef _WIN32
+	WSADATA wsaData;
+	if (WSAStartup(MAKEWORD(2,2),&wsaData) != 0)
+		return EXIT_FAILURE;
+#endif
+
 	*_socket_desc = socket(AF_INET, SOCK_STREAM, 0);
 
 #ifdef _WIN32
-	if(*_socket_desc == INVALID_SOCKET)
-#elif __linux
+	if(INVALID_SOCKET == *_socket_desc)
+#elif __linux__
 	if(*_socket_desc < 0)
 #else
 #endif
@@ -55,16 +61,38 @@ int socket_createServTCP(int _port, OUT_ARG struct sockaddr_in* _tcpsocket_addr,
     (*_tcpsocket_addr).sin_addr.s_addr = htonl(INADDR_ANY);
     (*_tcpsocket_addr).sin_port        = htons(_port);
 
+#ifdef _WIN32
+    if( bind(*_socket_desc, (struct sockaddr *)_tcpsocket_addr, sizeof(*_tcpsocket_addr)) == SOCKET_ERROR )
+#elif __linux__
     if( bind(*_socket_desc, (struct sockaddr *)_tcpsocket_addr, sizeof(*_tcpsocket_addr)) != 0 )
+#endif
     	return EXIT_FAILURE;
 
     return EXIT_SUCCESS;
 }
 
-int socket_createPeerTCP(char* _server_addr, int _server_port, OUT_ARG struct sockaddr_in* _tcpsocket_addr, OUT_ARG int* _socket_desc){
-
-	if((*_socket_desc = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+int socket_createPeerTCP(char* _server_addr, int _server_port, OUT_ARG struct sockaddr_in* _tcpsocket_addr, OUT_ARG socket_t* _socket_desc){
+	logMsg(__func__, __LINE__, LOG_INFO, "Try to create socket.");
+#ifdef _WIN32
+	WSADATA wsaData;
+	if (WSAStartup(MAKEWORD(2,2),&wsaData) != 0)
 		return EXIT_FAILURE;
+#endif
+
+	*_socket_desc = socket(AF_INET , SOCK_STREAM, IPPROTO_TCP);
+
+#ifdef _WIN32
+	if(INVALID_SOCKET == *_socket_desc){
+		WSACleanup();
+#elif __linux__
+	*_socket_desc = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if(*_socket_desc < 0){
+#else
+#endif
+		return EXIT_FAILURE;
+	}
+
+	logMsg(__func__, __LINE__, LOG_INFO, "Socket created.");
 
     (*_tcpsocket_addr).sin_family      = AF_INET;
     (*_tcpsocket_addr).sin_addr.s_addr = inet_addr(_server_addr);

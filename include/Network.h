@@ -19,7 +19,7 @@
 #include <string.h>
 #ifdef _WIN32
 #include <windows.h>
-#include <winsock.h>
+#include <winsock2.h>
 #elif __linux__
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -43,6 +43,6 @@ int socket_createServTCP(int _port, OUT_ARG struct sockaddr_in* _tcpsocket_addr,
  * by __server_addr address and _server_port port.
  * @return 0 success; 1 error
  */
-int socket_createPeerTCP(char* _server_addr, int _server_port, OUT_ARG struct sockaddr_in* _tcpsocket_addr, OUT_ARG int* _socket_desc);
+int socket_createPeerTCP(char* _server_addr, int _server_port, OUT_ARG struct sockaddr_in* _tcpsocket_addr, OUT_ARG socket_t* _socket_desc);
 
 #endif /* INCLUDE_NETWORK_H_ */
