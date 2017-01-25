@@ -157,19 +157,14 @@ static file_size_t __recvAndSaveFile(int _socket_fd, char* _tmp_file_fullpath, f
 		OUT_ARG BYTE _counted_tmpfile_hash_md5[MD5_BLOCK_SIZE]){
 
 	file_size_t recv_total_data_size = 0;
-#ifdef _WIN32
-	FILE* tmp_file = NULL;
-#elif __linux__
-	int tmp_file = 0;
-#endif
-
+	file_t tmp_file = NULL;
 	MD5_CTX ctx;
 	ssize_t recved_packet_size = 0;
 	size_t input_packet_size = 0;
 	char* input_dataBuff = NULL;
 
-	input_dataBuff = (char*) malloc(SENDING_FILE_PACKET_SIZE * sizeof(char));
-	memset(input_dataBuff, '\0', SENDING_FILE_PACKET_SIZE * sizeof(char));
+	input_dataBuff = (char*) malloc(SENDING_FILE_PACKET_SIZE + 1 * sizeof(char));
+	memset(input_dataBuff, '\0', SENDING_FILE_PACKET_SIZE + 1 * sizeof(char));
 
 	// open new file to write mode
 	logMsg(__func__, __LINE__, LOG_INFO, "Try to open tmp file in storage: %s", _tmp_file_fullpath);
@@ -325,7 +320,7 @@ thread_rc_t startPeerThread(void* _thread_data_strc){
 
 	// get file info message
 	file_info_msg_t recv_fileInfo_strc;
-	size_t input_msg_buffSize = sizeof(char) * input_msg_size;
+	size_t input_msg_buffSize = sizeof(char) * input_msg_size + 1;
 	char* fileInfo_msgBuff = (char*) malloc(input_msg_buffSize);
 	memset(fileInfo_msgBuff, '\0', input_msg_buffSize);
 
@@ -380,8 +375,8 @@ thread_rc_t startPeerThread(void* _thread_data_strc){
 	// get file md5 hash from peer
 	BYTE peer_fileHash_md5[MD5_BLOCK_SIZE];
 	memset(peer_fileHash_md5, '\0', MD5_BLOCK_SIZE * sizeof(BYTE));
-	char* peer_fileHash_md5_str = (char*) malloc(input_msg_size);
-	memset(peer_fileHash_md5_str, '\0', input_msg_size);
+	char* peer_fileHash_md5_str = (char*) malloc(input_msg_size + 1);
+	memset(peer_fileHash_md5_str, '\0', input_msg_size + 1);
 
 	if(socket_recvBytes(peer_socket_d, input_msg_size, peer_fileHash_md5_str) == -1){
 		logMsg(__func__, __LINE__, LOG_ERROR,

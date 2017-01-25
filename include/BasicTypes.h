@@ -9,6 +9,7 @@
 #ifndef INCLUDE_BASICTYPES_H_
 #define INCLUDE_BASICTYPES_H_
 
+#include <stdio.h>
 #include <stdint.h>
 
 #ifdef __linux__
@@ -48,6 +49,13 @@ typedef pthread_t thread_t;
 typedef LPTHREAD_START_ROUTINE thread_rc_t;
 #elif __linux__
 typedef void* thread_rc_t;
+#else
+#endif
+
+#ifdef _WIN32
+typedef FILE* file_t;
+#elif __linux__
+typedef int file_t;
 #else
 #endif
 

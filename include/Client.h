@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #ifdef __linux__
 #include <libgen.h>
 #include <sys/socket.h>
