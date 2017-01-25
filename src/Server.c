@@ -254,10 +254,10 @@ static file_size_t __recvAndSaveFile(int _socket_fd, char* _tmp_file_fullpath, f
  * 4) client sends the file info message size: msg_size_t
  * 5) client sends the file info struct (serialized cstring message): file_info_msg_t
  * 6) client receives result of deserialization file info message: netmsg_stat_code_t
- * 7) client sends the file md5 hash message size: msg_size_t
- * 8) client sends the file md5 hash: char[MD5_BLOCK_SIZE * 2]
- * 9) client receives result sending file md5 hash message: netmsg_stat_code_t
- * 10) client sends file: loop of sending data packet size and sending data packet
+ * 7) client sends file: loop of sending data packet size and sending data packet
+ * 8) client receives result sending file data message: netmsg_stat_code_t
+ * 9) client sends the file md5 hash message size: msg_size_t
+ * 10) client sends the file md5 hash: char[MD5_BLOCK_SIZE * 2]
  * 11) client receives result of md5 hashes comparing and transfer result message: netmsg_stat_code_t
  */
 thread_rc_t startPeerThread(void* _thread_data_strc){
