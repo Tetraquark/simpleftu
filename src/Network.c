@@ -20,7 +20,9 @@ int socket_close(socket_t _socket_d){
 }
 
 ssize_t socket_sendBytes(socket_t _socket_d, const void* _buff, size_t _size){
-	return send(_socket_d, _buff, _size, 0);
+	ssize_t bytes_sent = send(_socket_d, _buff, _size, 0);
+	logMsg(__func__, __LINE__, LOG_INFO, "Sent bytes: %d", bytes_sent);
+	return bytes_sent ;
 }
 
 ssize_t socket_recvBytes(socket_t _socket_d, size_t _recv_size, OUT_ARG void* _recv_buff){
@@ -28,13 +30,14 @@ ssize_t socket_recvBytes(socket_t _socket_d, size_t _recv_size, OUT_ARG void* _r
 	ssize_t bytes_readed = 0;
 
 	while(total_recved_bytes < _recv_size){
-		if((bytes_readed = read(_socket_d, _recv_buff + total_recved_bytes, _recv_size - total_recved_bytes)) <= 0){
+		if((bytes_readed = recv(_socket_d, _recv_buff + total_recved_bytes, _recv_size - total_recved_bytes, 0)) <= 0){
 			total_recved_bytes = -1;
 			break;
 		}
 		total_recved_bytes += bytes_readed;
 	}
 
+	logMsg(__func__, __LINE__, LOG_INFO, "Received bytes: %d", total_recved_bytes);
 	return total_recved_bytes;
 }
 
