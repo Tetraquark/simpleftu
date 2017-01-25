@@ -320,9 +320,9 @@ thread_rc_t startPeerThread(void* _thread_data_strc){
 
 	// get file info message
 	file_info_msg_t recv_fileInfo_strc;
-	size_t input_msg_buffSize = sizeof(char) * input_msg_size + 1;
-	char* fileInfo_msgBuff = (char*) malloc(input_msg_buffSize);
-	memset(fileInfo_msgBuff, '\0', input_msg_buffSize);
+	size_t input_msg_buffSize = sizeof(char) * input_msg_size;
+	char* fileInfo_msgBuff = (char*) malloc(input_msg_buffSize + 1);
+	memset(fileInfo_msgBuff, '\0', input_msg_buffSize + 1);
 
 	if(socket_recvBytes(peer_socket_d, input_msg_buffSize, (void*) fileInfo_msgBuff) == -1){
 		logMsg(__func__, __LINE__, LOG_ERROR,
