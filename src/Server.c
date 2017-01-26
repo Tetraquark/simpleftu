@@ -188,17 +188,13 @@ static file_size_t __recvAndSaveFile(int _socket_fd, char* _tmp_file_fullpath, f
 	}
 #endif
 
+	logMsg(__func__, __LINE__, LOG_INFO, "Tmp file successfully opened.");
+
 	// init MD5 hash checker
 	md5_init(&ctx);
 
 	while(recv_total_data_size < full_remain_fileSize){
-/*
-		if(socket_recvBytes(_socket_fd, sizeof(input_packet_size), (void*)&input_packet_size) == -1){
-			logMsg(__func__, __LINE__, LOG_ERROR, "Error receiving input data packet size from socket. Abort peer connection.");
-			recv_total_data_size = -1;
-			break;
-		}
-*/
+
 		if(full_remain_fileSize - recv_total_data_size < SENDING_FILE_PACKET_SIZE)
 			wait_in_packet_size = full_remain_fileSize - recv_total_data_size;
 		else

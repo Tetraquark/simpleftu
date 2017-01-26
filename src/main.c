@@ -84,6 +84,7 @@ int main(int argc, char** argv){
 	servConf_st.port = -1;
 	servConf_st.password = NULL;
 	servConf_st.storageFolderPath = NULL;
+	servConf_st.log_stream = NULL;
 
 	pid_t daemon_pid;
 

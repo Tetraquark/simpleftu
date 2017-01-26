@@ -89,7 +89,6 @@ typedef enum __mode_type mode_type_t;
 struct __file_info_msg{
 	file_size_t fileSize;					// in bytes
 	char fileName[MAX_FILENAME_LEN];
-	//BYTE fileHash_md5[MD5_BLOCK_SIZE];
 };
 typedef struct __file_info_msg file_info_msg_t;
 
@@ -103,6 +102,7 @@ struct __serverConfig{
 	char* password;
 	char* storageFolderPath;
 	int port;
+	FILE* log_stream;
 };
 typedef struct __serverConfig serverConfig_t;
 
