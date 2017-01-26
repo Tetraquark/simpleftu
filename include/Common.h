@@ -20,6 +20,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 #ifdef __linux__
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -29,12 +30,11 @@
 #include <inttypes.h>
 #endif
 
-#ifdef DEBUG
-void DEBUG_printlnStdoutMsg(const char* _func_name, const int _line_number, log_msg_type_t _msg_type, const char* _debug_msg);
-#endif
-
 char* getStrMsgType(log_msg_type_t msg_type);
-void logMsg(const char* _func_name, const int _line_number, log_msg_type_t _msg_type, const char *_format, ...);
+void logMsg(FILE* _stream_ptr, const char* _func_name, const int _line_number,
+		log_msg_type_t _msg_type, const char *_format, ...);
+
+char* getCurrSysTimeStr();
 
 file_size_t getFileSize(const char* _file_name);
 

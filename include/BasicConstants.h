@@ -19,6 +19,7 @@
 #define OUT_ARG
 
 #define MAX_LOG_MSG_LEN 1024
+#define MAX_LOG_TIME_STR_LEN 19
 
 #ifdef DEBUG
 #define DEFAULT_SERVER_PORT DEBUG_SERVER_PORT
@@ -37,6 +38,8 @@
 #else
 #define DEFAULT_STORAGEDIR_NAME "sftu_storage"
 #endif
+
+#define DEFAULT_LOGFILE_PATH "logs.txt"
 
 /*
  * MAX_FILE_SIZE

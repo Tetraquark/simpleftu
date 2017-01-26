@@ -8,13 +8,6 @@
 
 #include "../include/Common.h"
 
-#ifdef DEBUG
-void DEBUG_printlnStdoutMsg(const char* _func_name, const int _line_number, log_msg_type_t _msg_type, const char* _debug_msg){
-	printf("[DEBUG-%s][%s(), {%d}]:: %s\n", getStrMsgType(_msg_type), _func_name, _line_number, _debug_msg);
-	fflush(stdout);
-}
-#endif
-
 char* getStrMsgType(log_msg_type_t _msg_type){
 	switch(_msg_type){
 	case LOG_INFO:
@@ -28,7 +21,8 @@ char* getStrMsgType(log_msg_type_t _msg_type){
 	return "";
 }
 
-void logMsg(const char* _func_name, const int _line_number, log_msg_type_t _msg_type, const char *_format, ...){
+void logMsg(FILE* _stream_ptr, const char* _func_name, const int _line_number,
+		log_msg_type_t _msg_type, const char *_format, ...){
 
 	va_list ap;
 	char msg[MAX_LOG_MSG_LEN];
@@ -36,10 +30,28 @@ void logMsg(const char* _func_name, const int _line_number, log_msg_type_t _msg_
 	vsnprintf(msg, sizeof(msg), _format, ap);
 	va_end(ap);
 
+	char* curr_time_str = getCurrSysTimeStr();
+
 #ifdef DEBUG
-	DEBUG_printlnStdoutMsg(_func_name, _line_number, _msg_type, msg);
+	fprintf(_stream_ptr, "[DEBUG-%s][%s(), {%d}][%s]:: %s\n", getStrMsgType(_msg_type), _func_name, _line_number, curr_time_str, msg);
 #else
+	fprintf(_stream_ptr, "[%s][%s]:: %s\n", getStrMsgType(_msg_type), curr_time_str, msg);
 #endif
+
+	fflush(_stream_ptr);
+	free(curr_time_str);
+}
+
+char* getCurrSysTimeStr(){
+	char* time_str = (char*) malloc(MAX_LOG_TIME_STR_LEN * sizeof(char) + sizeof(char));
+	memset(time_str, '\0', MAX_LOG_TIME_STR_LEN * sizeof(char) + sizeof(char));
+    struct tm *tm_strct;
+    time_t time_now = time(0);
+
+    tm_strct = gmtime(&time_now);
+    strftime(time_str, MAX_LOG_TIME_STR_LEN * sizeof(char), "%Y.%m.%d-%H:%M:%S", tm_strct);
+
+	return time_str;
 }
 
 file_size_t getFileSize(const char* _file_name){
